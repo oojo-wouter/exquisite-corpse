@@ -225,7 +225,7 @@ function resumeBtn(){ const sv=savedGame(); if(!sv) return "";
   return `<div class="card" style="gap:10px"><span class="lab">Unfinished game</span><p>${sv.g.edition==="draw"?"Drawing":"Words"} · ${sv.g.turns.length} of ${sv.g.parts} parts done</p>
   <div class="row"><button class="solid" onclick="resume()">Continue</button>${confirmBtn("drop","Discard","Discard it?","ghost","store.set('ec-game','');render()")}</div></div>`; }
 function resume(){ const sv=savedGame(); if(!sv) return; S.mode="local"; S.game=sv.g; S.draft=sv.d; go(sv.screen==="turn"?"turn":"handoff"); }
-function quitGame(){ if(S.mode==="local") store.set("ec-game",""); S.game=null; S.draft=null; unsub?.(); location.hash=""; go("home"); }
+function quitGame(){ if(S.mode==="local") store.set("ec-game",""); S.game=null; S.draft=null; location.hash=""; go("home"); }
 function newGame(){
   return { id: Math.random().toString(36).slice(2,8), edition:S.edition, theme:S.theme, parts:S.edition==="draw"?3:4,
     start: S.edition==="draw" ? starterDots() : [], turns:[] };
@@ -328,74 +328,64 @@ function openCheat(){
 function closeCheat(){ $("#cheat")?.remove(); document.body.style.overflow=""; cheatReturn?.focus?.(); }
 addEventListener("keydown",e=>{ if(e.key==="Escape" && $("#cheat")) closeCheat(); });
 
-// ---------- wall of examples ----------
-function rng(seed){ return ()=>{ seed=seed+0x6D2B79F5|0; let t=Math.imul(seed^seed>>>15,1|seed); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
-let R=Math.random;
-function wob(p,amt){ const o=[], ph=R()*6, fr=1+R()*2, n=p.length-2||1;
-  for(let i=0;i<p.length;i+=2){ const k=i/n, e=(i===0||i===p.length-2)?.25:1; o.push(p[i]+Math.sin(ph+k*fr*6)*amt*e+(R()-.5)*1.4, p[i+1]+Math.cos(ph+k*fr*5)*amt*e+(R()-.5)*1.4); } return o; }
-function L(...xy){ const o=[]; for(let i=0;i<xy.length-2;i+=2){ const a=xy[i],b=xy[i+1],c=xy[i+2],d=xy[i+3], n=Math.max(2,Math.ceil(Math.hypot(c-a,d-b)/22)); for(let j=0;j<n;j++) o.push(a+(c-a)*j/n,b+(d-b)*j/n); } o.push(xy[xy.length-2],xy[xy.length-1]); return wob(o,4); }
-function A(cx,cy,rx,ry,a0=0,a1=362){ const o=[], n=Math.max(10,Math.ceil(Math.abs(a1-a0)/7)); for(let j=0;j<=n;j++){ const a=(a0+(a1-a0)*j/n)*Math.PI/180; o.push(cx+Math.cos(a)*rx, cy+Math.sin(a)*ry); } return wob(o,Math.min(3.5,Math.max(rx,ry)*.035)); }
-const Ci=(x,y,r)=>A(x,y,r,r);
-function Q(x0,y0,cx,cy,x1,y1){ const o=[]; for(let j=0;j<=16;j++){ const t=j/16,u=1-t; o.push(u*u*x0+2*u*t*cx+t*t*x1, u*u*y0+2*u*t*cy+t*t*y1); } return wob(o,3); }
-const range=(a,b,st)=>{ const r=[]; for(let x=a;x<=b;x+=st) r.push(x); return r; };
-
-const FIGURES = [
- { tags:["koppenbergcross"], title:"The Koppenberg rider", parts:[
-   ()=>[A(500,330,230,170,180,360),L(270,330,730,330),L(400,230,425,195),L(500,200,500,165),L(600,230,575,195),A(500,440,75,42),Ci(512,440,12),A(500,470,115,70,25,155),L(450,525,450,700),L(550,525,550,700)],
-   ()=>[L(450,0,450,140),L(550,0,550,140),Ci(500,360,220),...range(0,7,1).map(k=>{const a=k*Math.PI/4;return L(500+Math.cos(a)*32,360+Math.sin(a)*32,500+Math.cos(a)*205,360+Math.sin(a)*205);}),Ci(500,360,30),L(290,290,190,220,110,250),L(710,290,820,240,870,160),L(870,160,870,60),L(870,60,950,85,870,115),L(430,575,430,700),L(570,575,570,700)],
-   ()=>[L(430,0,410,200,380,430),L(570,0,590,200,640,430),A(355,450,62,28),A(665,450,62,28),L(40,600,200,525,330,495,480,485,620,478,780,505,960,560),...range(140,860,90).map(x=>L(x,560,x+28,610)),Ci(300,400,6),Ci(720,385,5),Ci(250,455,4),Ci(770,420,7)]
- ]},
- { tags:["tanker","halloween"], title:"Pumpkin at sea", parts:[
-   ()=>[A(500,380,210,170),A(420,380,110,165,100,260),A(580,380,110,165,-80,80),Q(500,212,490,150,535,110),L(410,330,450,270,490,330,410,330),L(510,330,550,270,590,330,510,330),L(380,440,420,480,460,445,500,485,540,445,580,480,620,440),L(470,550,470,700),L(530,550,530,700)],
-   ()=>[L(470,0,470,200),L(530,0,530,200),L(140,200,860,200,790,420,210,420,140,200),L(650,200,650,90,770,90,770,200),L(675,130,745,130),L(700,90,700,45,740,45,740,90),A(760,22,28,14,180,500),L(60,470,140,450,220,480,300,455,380,480,460,455,540,480,620,455,700,480,780,455,860,480,940,460),Ci(300,300,16),Ci(380,300,16),L(420,485,420,700),L(580,485,580,700)],
-   ()=>[L(420,0,395,200,440,380),L(580,0,605,200,560,380),L(440,380,370,450),L(440,380,450,470),L(440,380,510,440),L(560,380,490,440),L(560,380,560,470),L(560,380,640,450),A(500,580,42,58)]
- ]},
- { tags:["brugge","speelgoed"], title:"Belfry swan on wheels", parts:[
-   ()=>[L(500,30,440,150,560,150,500,30),L(420,150,580,150),L(420,150,420,700),L(580,150,580,700),L(420,200,580,200),A(500,320,55,30),Ci(500,320,12),Ci(500,500,48),L(500,500,500,468),L(500,500,526,516)],
-   ()=>[L(420,0,420,205),L(580,0,580,205),A(500,370,300,170),A(430,380,60,40,0,180),A(530,380,60,40,0,180),A(630,380,60,40,0,180),Q(225,330,140,220,220,130),Ci(205,105,24),L(185,100,120,115,182,120),L(450,535,450,700),L(550,535,550,700)],
-   ()=>[L(450,0,450,200),L(550,0,550,200),L(300,200,700,200,700,380,300,380,300,200),L(340,200,340,140,420,140,420,200),L(600,200,620,150,660,200),Ci(380,440,65),Ci(620,440,65),Ci(380,440,10),Ci(620,440,10),L(80,515,920,515),...range(120,880,80).map(x=>L(x,515,x-15,548))]
- ]},
- { tags:["route du rhum"], title:"The single-handed sailor", parts:[
-   ()=>[L(500,40,500,340),L(500,55,700,320,500,320),L(500,40,560,55,500,70),Ci(500,470,125),A(450,460,25,12,0,180),A(550,460,25,12,0,180),L(470,530,530,530),L(460,592,460,700),L(540,592,540,700)],
-   ()=>[L(460,0,460,120),L(540,0,540,120),Q(460,120,340,150,340,250),Q(540,120,660,150,660,250),L(340,250,340,620,660,620,660,250),L(380,330,620,330,620,470,380,470,380,330),L(400,400,450,380,500,410,550,380,600,400),L(440,620,440,700),L(560,620,560,700)],
-   ()=>[L(440,0,480,300),L(560,0,520,300),L(500,300,500,590),L(420,360,580,360),A(500,470,170,130,20,160),L(660,515,690,470),L(340,515,310,470),L(60,640,160,620,260,645,360,620,460,645,560,620,660,645,760,620,860,645,940,630)]
- ]},
- { tags:["verkeersbelasting"], title:"Road tax walks home", parts:[
-   ()=>[L(400,60,600,60,600,560,400,560,400,60),Ci(500,160,58),Ci(500,310,58),Ci(500,460,58),Ci(525,160,14),Ci(475,310,14),Ci(500,480,14),L(460,560,460,700),L(540,560,540,700)],
-   ()=>[L(460,0,460,150),L(540,0,540,150),L(220,150,780,150,780,520,220,520,220,150),L(220,150,500,360,780,150),L(680,180,750,180,750,250,680,250,680,180),Ci(715,215,14),L(220,300,110,230,50,300),L(780,300,890,370,950,300),L(400,520,400,700),L(600,520,600,700)],
-   ()=>[L(400,0,380,250,400,435),L(600,0,620,250,600,435),Ci(400,520,85),Ci(600,520,85),Ci(400,520,15),Ci(600,520,15),...range(60,900,110).map(x=>L(x,640,x+60,640))]
- ]}
-];
-const SENTENCES = [
- { tags:["koppenbergcross","tanker","staking"], parts:["The muddy Koppenberg cyclist","swallows","a silent oil tanker","during the national strike."] },
- { tags:["speelgoed","verkeersbelasting","brugge"], parts:["Een vergeten speelgoedtrein","kust","de natte verkeersbelasting","op de Markt van Brugge."] },
- { tags:["route du rhum","bruxelles","halloween"], parts:["Le marin de la Route du Rhum","offre en cadeau","une citrouille fiscale","au milieu de Bruxelles."] },
- { tags:["cercle - antwerp","schenking"], parts:["The Cercle goalkeeper's left glove","unbuttons","a gift form for the tax office","at the bottom of a cold canal."] },
- { tags:["brand","speelgoed","soldaat"], parts:["A small polite fire","measures","the patience of a toy soldier","before the strike ends."] }
-];
-let EX=null;
-function examples(){
-  if(EX) return EX;
-  EX=[];
-  FIGURES.forEach((f,i)=>{ R=rng(7+i*31); EX.push({ id:"d"+i, edition:"draw", theme:f.title, tags:f.tags, parts:3, start:[], pencil:true,
-    turns:f.parts.map(fn=>({strokes:fn().map(s=>s.map(v=>Math.round(v*10)/10)), name:"Example"})) }); });
-  R=Math.random;
-  SENTENCES.forEach((x,i)=>EX.push({ id:"w"+i, edition:"words", theme:"Trending in Belgium", tags:x.tags, parts:x.parts.length, turns:x.parts.map(t=>({text:t,name:"Example"})) }));
-  // interleave drawings and sentences
-  const d=EX.filter(e=>e.edition==="draw"), w=EX.filter(e=>e.edition==="words"); EX=[]; d.forEach((x,i)=>{ EX.push(x); if(w[i]) EX.push(w[i]); });
-  return EX;
+// ---------- shared database (Supabase). Left empty: links carry the whole game and the wall stays empty ----------
+const SB = { url:"", key:"" };
+const hasDB = () => !!(SB.url && SB.key);
+async function api(path, opts={}){
+  const r=await fetch(SB.url.replace(/\/$/,"")+"/rest/v1/"+path,{...opts,headers:{apikey:SB.key,Authorization:"Bearer "+SB.key,"Content-Type":"application/json",Prefer:"return=minimal",...(opts.headers||{})}});
+  if(!r.ok){ const e=new Error("db "+r.status); e.status=r.status; throw e; }
+  const txt=await r.text(); return txt?JSON.parse(txt):null;
 }
+const newId=()=>Array.from(crypto.getRandomValues(new Uint8Array(8)),b=>"abcdefghijkmnpqrstuvwxyz23456789"[b%32]).join("");
+const startStr = g => g.start.map(p=>p.map(Math.round).join(",")).join("|");
+const turnRow = (g,n,t) => ({game_id:g.id, n, strokes:g.edition==="draw"?enc(t.strokes||[]):"", text:t.text||"", name:t.name||""});
+const dbCreate = g => api("games",{method:"POST",body:JSON.stringify({id:g.id,edition:g.edition,parts:g.parts,start:startStr(g)})});
+const dbTurn = (g,n,t) => api("turns",{method:"POST",body:JSON.stringify(turnRow(g,n,t))});
+const dbCount = async id => (await api(`turns?game_id=eq.${id}&select=n`)).length;
+function rowToGame(r, id){
+  const turns=[...(r.turns||[])].sort((a,b)=>a.n-b.n).map(t=>r.edition==="draw"?{strokes:dec(t.strokes),name:t.name}:{text:t.text,name:t.name});
+  return { id, edition:r.edition, parts:r.parts, theme:"", start:r.start?r.start.split("|").map(p=>p.split(",").map(Number)):[], turns };
+}
+async function dbLoad(id){ const a=await api(`games?id=eq.${id}&select=edition,parts,start,turns(n,strokes,text,name)`); return a&&a[0]?rowToGame(a[0],id):null; }
+async function dbWall(){ const a=await api("wall?select=game_id,created_at,games(edition,parts,start,turns(n,strokes,text,name))&order=created_at.desc&limit=40"); return a.filter(r=>r.games).map(r=>({...rowToGame(r.games,r.game_id),onWall:true})); }
+async function publishToWall(btn){
+  const g=S.game; btn.disabled=true; btn.textContent="Publishing…";
+  try{
+    if(!g.inDB){ g.id=newId(); await dbCreate(g); await api("turns",{method:"POST",body:JSON.stringify(g.turns.map((t,n)=>turnRow(g,n,t)))}); g.inDB=true; }
+    try{ await api("wall",{method:"POST",body:JSON.stringify({game_id:g.id})}); }catch(e){ if(e.status!==409) throw e; }
+    g.onWall=true; btn.textContent="On the wall"; toast("Published to the wall");
+  }catch(e){ btn.disabled=false; btn.textContent="Publish to wall"; toast("Could not publish. Check your connection and try again."); }
+}
+// games this person started or added to, so they can come back for the reveal
+const mine = { all(){ try{ return JSON.parse(store.get("ec-mine")||"[]"); }catch(e){ return []; } },
+  add(g){ const a=mine.all().filter(x=>x.id!==g.id); a.unshift({id:g.id,edition:g.edition,parts:g.parts,at:Date.now()}); store.set("ec-mine",JSON.stringify(a.slice(0,8))); } };
+let WALL=[];
 function wallHtml(){
-  return `<div class="stack" id="wall-top"><span class="lab">Wall of examples</span><h2>What it can become</h2>
-  <p class="muted" style="font-size:13px">Tap one to unfold it.</p></div>
-  <div class="wall">${examples().map((e,i)=>`<button onclick="openExample(${i})" aria-label="Open example ${i+1}">
+  return `<div class="stack" id="wall-top"><span class="lab">The wall</span><h2>Made with this app</h2>
+  <p class="muted" style="font-size:13px">Finished pieces that players chose to publish. Tap one to unfold it.</p></div>
+  <div class="wall" id="wall"></div>
+  <p class="muted" id="wall-empty" ${hasDB()?"hidden":""}>Nothing on the wall yet. Finish a game and tap <b>Publish to wall</b> to be the first.</p>`;
+}
+async function loadWall(){
+  if(!hasDB()) return;
+  try{ WALL=await dbWall(); }catch(e){ WALL=[]; }
+  const w=$("#wall"), em=$("#wall-empty"); if(!w) return;
+  em.hidden=WALL.length>0;
+  w.innerHTML=WALL.map((e,i)=>`<button onclick="openWall(${i})" aria-label="Open piece ${i+1}">
     ${e.edition==="draw"? e.turns.map((t,j)=>`<canvas data-ex="${i}" data-p="${j}"></canvas>`).join("") : `<div class="wq">${e.turns.map(t=>esc(t.text)).join(" ")}</div>`}
-    ${e.edition==="draw"?`<div class="tg">${esc(e.theme)}</div>`:""}</button>`).join("")}</div>`;
+    <div class="tg">${esc(e.turns.map(t=>t.name).filter(Boolean).join(" · ")||(e.edition==="draw"?"Drawing":"Words"))}</div></button>`).join("");
+  w.querySelectorAll("canvas").forEach(c=>{ sizeCanvas(c); paint(c.getContext("2d"), WALL[+c.dataset.ex].turns[+c.dataset.p].strokes, {start:+c.dataset.p===0?WALL[+c.dataset.ex].start:null}); });
 }
-function paintWall(){
-  document.querySelectorAll(".wall canvas").forEach(c=>{ sizeCanvas(c); paint(c.getContext("2d"), EX[+c.dataset.ex].turns[+c.dataset.p].strokes, {pencil:true}); });
+function openWall(i){ S.mode="wall"; S.game={...WALL[i],inDB:true}; LINK=location.origin+location.pathname+"#g-"+S.game.id; go("reveal"); }
+async function yourGames(){
+  const box=$("#yours"); if(!box||!hasDB()) return; const list=mine.all(); if(!list.length) return;
+  const rows=await Promise.all(list.slice(0,5).map(async x=>({...x,count:await dbCount(x.id).catch(()=>null)})));
+  box.innerHTML=`<span class="lab">Your games</span>`+rows.map(x=>{ const done=x.count!==null&&x.count>=x.parts;
+    return `<div class="row" style="justify-content:space-between;border-top:1px solid var(--line);padding-top:8px"><span>${x.edition==="draw"?"Drawing":"Words"} · ${x.count===null?"…":x.count+" of "+x.parts} parts</span>
+    ${done?`<button class="solid chip" onclick="openGame('${x.id}')">Unfold the reveal</button>`:`<span class="muted" style="font-size:13px">waiting</span>`}</div>`; }).join("");
+  box.hidden=false;
 }
-function openExample(i){ S.mode="example"; S.view3d=false; S.game=EX[i]; go("reveal"); }
+async function openGame(id){ location.hash="g-"+id; }
 
 // ---------- play over a link: the whole game travels inside the link ----------
 const b64u = bytes => btoa(String.fromCharCode(...bytes)).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
@@ -418,6 +408,14 @@ let LINK="";
 const gameLink = () => LINK;
 async function makeLink(g){ LINK = location.origin + location.pathname + "#p=" + await packGame(g); return LINK; }
 async function routeHash(){
+  const gm=/^#g-([a-z0-9]{8})$/.exec(location.hash);
+  if(gm && hasDB()){
+    S.screen="loading"; render();
+    const g=await dbLoad(gm[1]).catch(()=>null);
+    if(!g){ S.screen="missing"; render(); return; }
+    g.inDB=true; S.mode="remote"; S.game=g; LINK=location.origin+location.pathname+"#g-"+g.id;
+    return go(g.turns.length>=g.parts ? "reveal" : "join");
+  }
   const m=/^#p=([zj][A-Za-z0-9_-]+)$/.exec(location.hash); if(!m) return;
   try{ const g=await unpackGame(m[1]); S.mode="remote"; S.game=g; LINK=location.href; go(g.turns.length>=g.parts ? "reveal" : "join"); }
   catch(e){ S.screen="missing"; render(); }
@@ -436,12 +434,12 @@ function shareGrid(msg, link, subject){
     <button style="font-size:14px;padding:10px 8px" onclick="copy(${esc(JSON.stringify(link))},this)">Copy link</button></div>`;
 }
 async function shareLink(text, btn){
-  if(navigator.share){ try{ await navigator.share({text}); if(S.screen==="sent") go("waiting"); return; }catch(e){ if(e?.name==="AbortError") return; } }
+  if(navigator.share){ try{ await navigator.share({text}); if(S.screen==="sent") sentIt(); return; }catch(e){ if(e?.name==="AbortError") return; } }
   copy(text, btn);
 }
 
 // ---------- screens ----------
-function go(screen){ S.screen=screen; render(); scrollTo(0,0); if(S.game) persist(); }
+function go(screen){ if(screen!=="waiting") stopPoll(); if(screen!=="reveal" && S.screen==="reveal") document.title="Exquisite Corpse"; S.screen=screen; render(); scrollTo(0,0); if(S.game) persist(); }
 
 function render(){
   const app=$("#app");
@@ -452,7 +450,7 @@ function render(){
   after[S.screen]?.();
 }
 const after = {};
-after.home=()=>paintWall();
+after.home=()=>{ loadWall(); yourGames(); };
 
 function home(){
   return `
@@ -460,7 +458,7 @@ function home(){
     <span class="lab">OOJO game</span>
     <h1>Exquisite<br><em>corpse</em></h1>
   </div>
-  <div class="row" style="gap:4px 16px"><button class="ghost chip" style="padding-left:0" onclick="$('#wall-top').scrollIntoView({behavior:'smooth'})">Examples ↓</button>
+  <div class="row" style="gap:4px 16px"><button class="ghost chip" style="padding-left:0" onclick="$('#wall-top').scrollIntoView({behavior:'smooth'})">The wall ↓</button>
   <button class="ghost chip" style="padding-left:0" onclick="openCheat()">Cheat: look at the masters</button></div>
   <p>Each player adds one part of a figure or a sentence without seeing the rest. Only the fold gives a hint. The whole thing is revealed at the end.</p>
 
@@ -489,6 +487,7 @@ function home(){
     <button class="wide" onclick="startRemote()">Play over a link · one part each</button>
   </div>
 
+  <div class="stack" id="yours" hidden></div>
   <hr>
   ${wallHtml()}
 `;
@@ -502,7 +501,7 @@ async function startRemote(){
 
 function turn(){
   const g=S.game, n=g.turns.length, names=partNames(g), last=n===g.parts-1;
-  const t=THEMES[g.theme];
+  const t=THEMES[g.theme]||THEMES["Dream zoo"];
   if(!S.draft) S.draft={strokes:[], text:"", name:store.get("ec-name"), kws: g.edition==="draw"? pick(t.nouns,4) : kwFor(n,t)};
   const d=S.draft;
   const top=`<div class="topbar"><span class="lab">${g.edition==="draw"?"Drawing":"Words"}</span><div class="row" style="gap:2px"><button class="ghost chip" onclick="openCheat()">Cheat</button>${confirmBtn("quit","Quit","Quit game?","ghost chip","quitGame()")}</div></div>`;
@@ -556,7 +555,14 @@ async function finishTurn(){
   const g=S.game, d=S.draft, n=g.turns.length;
   const t={strokes:d.strokes, text:d.text.trim(), name:(d.name||"").trim()};
   if(t.name) store.set("ec-name", t.name);
-  if(S.mode==="remote"){
+  if(S.mode==="remote" && hasDB()){
+    $("#done").disabled=true;
+    try{ if(n===0){ g.id=newId(); await dbCreate(g); } await dbTurn(g,n,t); }
+    catch(e){ if(e.status===409){ toast("Someone already added this part. Loading the latest version."); return routeHash(); }
+      toast("Could not save. Check your connection and try again."); $("#done").disabled=false; return; }
+    g.inDB=true; g.turns.push(t); S.draft=null; mine.add(g);
+    LINK=location.origin+location.pathname+"#g-"+g.id; history.replaceState(null,"",location.pathname);
+  } else if(S.mode==="remote"){
     g.turns.push(t); S.draft=null; await makeLink(g);
     history.replaceState(null,"",location.pathname);
   } else { g.turns.push(t); S.draft=null; }
@@ -593,7 +599,7 @@ function sent(){
     ${navigator.share?`<button class="solid wide" onclick="shareLink(shareText(S.game),this)">Share with the next player…</button><span class="lab">Or pick an app</span>`:`<span class="lab">Send it with</span>`}
     ${shareGrid(shareMsg(g), link, "Your turn: exquisite corpse")}
   </div>
-  <button class="solid wide" onclick="go('waiting')">I've sent it</button>
+  <button class="solid wide" onclick="sentIt()">I've sent it</button>
   <button class="ghost" onclick="location.hash='';go('home')">Back to start</button>`;
 }
 
@@ -606,12 +612,35 @@ function waiting(){
       <div class="lb b2"><div class="back"></div>${band("M50 62 C40 40 60 25 70 15 C80 25 100 40 100 62 M45 40 L25 30 M105 40 L125 28")}
         <div class="lb b1"><div class="back"></div>${band("M45 62 C30 30 50 6 75 6 C100 6 120 30 105 62",true)}</div></div></div></div>
   <p class="quip" id="quip">${QUIPS[0]}</p>
-  <div class="stack" style="gap:6px;text-align:center"><span class="lab">${left} more ${left===1?"player":"players"} to go</span>
-  <p class="muted">The last player gets the reveal. Ask them to send it back to you.</p></div>
+  <div class="stack" style="gap:6px;text-align:center"><span class="lab" id="left">${left} more ${left===1?"player":"players"} to go</span>
+  <p class="muted" id="waitnote">${hasDB()?"Keep this page open and the reveal appears here. You can also come back later: your games are listed on the start screen.":"The last player gets the reveal. Ask them to send it back to you."}</p></div>
   <button class="ghost" onclick="location.hash='';go('home')">Start a new game while you wait</button>`;
 }
 let quipT=null;
-after.waiting=()=>{ clearInterval(quipT); let i=0; quipT=setInterval(()=>{ const q=$("#quip"); if(!q){ clearInterval(quipT); return; } q.style.opacity=0; setTimeout(()=>{ i=(i+1)%QUIPS.length; q.textContent=QUIPS[i]; q.style.opacity=1; },300); },2600); };
+let pollT=null;
+function stopPoll(){ clearTimeout(pollT); pollT=null; }
+function pollReveal(){
+  stopPoll(); const g=S.game; if(!hasDB()||!g?.inDB) return;
+  const tick=async()=>{
+    if(S.screen!=="waiting"||S.game!==g) return;
+    const n=await dbCount(g.id).catch(()=>null);
+    if(n!==null){ const left=g.parts-n, el=$("#left"); if(el) el.textContent=left>0?`${left} more ${left===1?"player":"players"} to go`:"Everyone is done";
+      if(left<=0){ return revealReady(g); } }
+    pollT=setTimeout(tick, document.hidden?20000:6000);
+  };
+  pollT=setTimeout(tick,4000);
+}
+function revealReady(g){
+  document.title="● Reveal ready · Exquisite Corpse";
+  try{ if(window.Notification && Notification.permission==="granted") new Notification("Your exquisite corpse is finished",{body:"Tap to unfold the reveal."}).onclick=()=>{ focus(); openGame(g.id); }; }catch(e){}
+  const q=$("#quip"); if(q){ clearInterval(quipT); q.textContent="It's finished."; }
+  const note=$("#waitnote"); if(note) note.innerHTML=`<button class="solid wide" onclick="openGame('${g.id}')">Unfold the reveal</button>`;
+}
+function sentIt(){
+  try{ if(hasDB() && window.Notification && Notification.permission==="default") Notification.requestPermission(); }catch(e){}
+  go("waiting");
+}
+after.waiting=()=>{ pollReveal(); clearInterval(quipT); let i=0; quipT=setInterval(()=>{ const q=$("#quip"); if(!q){ clearInterval(quipT); return; } q.style.opacity=0; setTimeout(()=>{ i=(i+1)%QUIPS.length; q.textContent=QUIPS[i]; q.style.opacity=1; },300); },2600); };
 
 function join(){
   const g=S.game, n=g.turns.length, names=partNames(g);
@@ -628,18 +657,19 @@ function reveal(){
   const body = g.edition==="draw"
     ? g.turns.map((t,i)=>`<div class="sec"><canvas data-i="${i}"></canvas></div>`).join("")
     : g.turns.map(t=>`<div class="sec wsec">${esc(t.text)}</div>`).join("");
-  const ex=S.mode==="example";
-  return `${ex?`<button class="ghost chip" style="align-self:flex-start;padding-left:0" onclick="go('home');setTimeout(()=>$('#wall-top')?.scrollIntoView(),50)">← Back to the wall</button>`:""}
-  <div class="stack" style="gap:4px"><span class="lab">${ex?"Example":"Unfolded"}</span><h2>${ex&&g.edition==="draw"?esc(g.theme):"The reveal"}</h2></div>
+  const ex=S.mode==="wall";
+  return `${ex?`<button class="ghost chip" style="align-self:flex-start;padding-left:0" onclick="go('home');setTimeout(()=>$('#wall-top')?.scrollIntoView(),400)">← Back to the wall</button>`:""}
+  <div class="stack" style="gap:4px"><span class="lab">${ex?"From the wall":"Unfolded"}</span><h2>The reveal</h2></div>
   <div class="reveal" id="rv">${body}</div>
-  <div class="credits" ${ex?"hidden":""}>${who.map((w,i)=>`<span>${esc(partNames(g)[i])} · ${esc(w)}</span>`).join("")}</div>
+  <div class="credits">${who.map((w,i)=>`<span>${esc(partNames(g)[i])} · ${esc(w)}</span>`).join("")}</div>
   <div class="stack">
-    <button class="solid wide" onclick="saveImage(this)">Save image</button>
+    ${hasDB()&&!ex?`<button class="solid wide" ${g.onWall?"disabled":""} onclick="publishToWall(this)">${g.onWall?"On the wall":"Publish to wall"}</button>`:""}
+    <button class="${hasDB()&&!ex?"":"solid "}wide" onclick="saveImage(this)">Save image</button>
     ${g.edition==="words"?`<button class="wide" onclick="copy(wordsText(S.game),this)">Copy the sentence</button>`:""}
-    ${S.mode==="remote"?`<div class="stack"><span class="lab">Send the reveal to everyone</span>
+    ${S.mode==="remote"||ex?`<div class="stack"><span class="lab">${ex?"Share it":"Send the reveal to everyone"}</span>
       ${navigator.share?`<button class="wide" onclick="revealShare(this)">Share…</button>`:""}
       ${shareGrid(revealMsg(g), LINK, "Our exquisite corpse is finished")}</div>`:""}
-    <button class="ghost wide" onclick="location.hash='';S.game=null;S.view3d=false;go('home')">${ex?"Make your own":"Play again"}</button>
+    <button class="ghost wide" onclick="location.hash='';S.game=null;go('home')">${ex?"Make your own":"Play again"}</button>
   </div>`;
 }
 after.reveal=()=>{
@@ -721,7 +751,7 @@ async function saveImage(btn){
 }
 
 async function revealShare(btn){
-  const g=S.game; if(!LINK.includes("#p=")) await makeLink(g);
+  const g=S.game; if(!LINK) await makeLink(g);
   shareLink(revealMsg(g)+" "+LINK, btn);
 }
 render();
