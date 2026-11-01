@@ -90,6 +90,22 @@ textarea{font-family:var(--display);font-size:30px;line-height:1.15;resize:none;
 .wall .wq{font-family:var(--display);font-size:21px;line-height:1.08;padding:14px 12px}
 .wall .tg{font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--grey);padding:8px 12px 10px;border-top:1px dashed var(--line)}
 .wall .wq+.tg{border-top:0}
+.sheetbg{position:fixed;inset:0;background:rgba(17,17,17,.45);z-index:30;display:flex;align-items:flex-end;justify-content:center}
+.cheat{background:var(--paper);width:100%;max-width:560px;max-height:86vh;overflow:auto;border-top:1.5px solid var(--ink);box-sizing:border-box;
+  padding:20px max(16px, env(safe-area-inset-right, 0px)) calc(24px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));display:flex;flex-direction:column;gap:16px;animation:up .25s ease-out}
+@keyframes up{from{transform:translateY(30px);opacity:0}}
+.art{display:grid;grid-template-columns:84px 1fr;gap:12px;border-top:1px solid var(--line);padding-top:14px}
+.art .yr{font-family:var(--display);font-size:22px;line-height:1.1;white-space:nowrap}
+.art .ti{font-family:var(--display);font-style:italic;font-size:22px;line-height:1.1}
+.art .by{font-size:14px}
+.art .md{font-size:13px;color:var(--grey)}
+.art a{color:var(--ink);font-weight:500;font-size:14px;text-underline-offset:3px}
+.steps{display:flex;flex-direction:column;background:#fff;border:1px solid var(--line)}
+.steps div{display:grid;grid-template-columns:34px 1fr;gap:10px;align-items:baseline;padding:10px 14px;font-size:14px;line-height:1.35}
+.steps div+div{border-top:1.5px dashed var(--line)}
+.steps b{font-family:var(--display);font-weight:400;font-size:24px;line-height:1}
+.steps i{font-family:var(--display);font-size:17px}
+.steps .end{grid-template-columns:1fr;color:var(--grey);font-size:13px}
 .howto{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;counter-reset:st}
 .howto div{border-top:1.5px solid var(--ink);padding-top:8px;font-size:13px;line-height:1.35;min-width:0}
 .howto div::before{counter-increment:st;content:counter(st);display:block;font-family:var(--display);font-size:28px;line-height:1}
@@ -267,6 +283,34 @@ function mountPad(canvas, strokes, opts){
   return { redraw:req };
 }
 
+// ---------- cheat sheet: famous exquisite corpses (images stay on the museums' sites) ----------
+const MASTERS = [
+ {yr:"1926–27", ti:"Nude", by:"Man Ray, Joan Miró, Yves Tanguy, Max Morise", md:"Ink, pencil and coloured pencil on paper", at:"MoMA, New York", url:"https://www.moma.org/collection/works/35701"},
+ {yr:"1927", ti:"Cadavre exquis", by:"Yves Tanguy, Man Ray, Max Morise, André Breton", md:"Ink, graphite and coloured pencil on paper", at:"Centre Pompidou, Paris", url:"https://www.centrepompidou.fr/en/ressources/oeuvre/cEpRp7"},
+ {yr:"1928", ti:"Exquisite corpse", by:"Man Ray, Max Morise, André Breton, Yves Tanguy", md:"Colour crayon, crayon and ink", at:"NGV, Melbourne", url:"https://ngv.vic.gov.au/explore/collection/work/107841"},
+ {yr:"1932", ti:"Cadavre exquis", by:"André Breton, Valentine Hugo, Paul Éluard", md:"Coloured pencil on black paper", at:"The Met, New York", url:"https://www.metmuseum.org/art/collection/search/483866"},
+ {yr:"1935", ti:"Cadavre exquis", by:"Óscar Domínguez, Remedios Varo, Esteban Francés", md:"Paper and photo collage", at:"SFMOMA, San Francisco", url:"https://www.sfmoma.org/artwork/96.649"},
+ {yr:"2000", ti:"Exquisite Corpse", by:"Jake and Dinos Chapman", md:"Etchings, a modern series", at:"Tate, London", url:"https://www.tate.org.uk/art/art-terms/cadavre-exquis-exquisite-corpse"}
+];
+let cheatReturn=null;
+function openCheat(){
+  cheatReturn=document.activeElement;
+  const bg=document.createElement("div"); bg.className="sheetbg"; bg.id="cheat";
+  bg.innerHTML=`<div class="cheat" role="dialog" aria-modal="true" aria-labelledby="cheat-h">
+    <div class="topbar"><span class="lab">Cheat</span><button class="ghost chip" id="cheat-x" onclick="closeCheat()">Close</button></div>
+    <h2 id="cheat-h">Look at the masters</h2>
+    <p class="muted" style="font-size:14px">The best-known exquisite corpses, made by the surrealists who invented the game. The images belong to the museums, so each one opens on the museum's site.</p>
+    ${MASTERS.map(m=>`<div class="art"><div class="yr">${m.yr}</div><div class="stack" style="gap:4px">
+      <span class="ti">${esc(m.ti)}</span><span class="by">${esc(m.by)}</span><span class="md">${esc(m.md)}</span>
+      <a href="${m.url}" target="_blank" rel="noopener">See it at ${esc(m.at)} ↗</a></div></div>`).join("")}
+    <a href="https://www.moma.org/collection/terms/exquisite-corpse" target="_blank" rel="noopener" style="color:var(--ink);font-size:14px;text-underline-offset:3px">More at MoMA: exquisite corpse ↗</a>
+  </div>`;
+  bg.addEventListener("click",e=>{ if(e.target===bg) closeCheat(); });
+  document.body.appendChild(bg); document.body.style.overflow="hidden"; $("#cheat-x").focus();
+}
+function closeCheat(){ $("#cheat")?.remove(); document.body.style.overflow=""; cheatReturn?.focus?.(); }
+addEventListener("keydown",e=>{ if(e.key==="Escape" && $("#cheat")) closeCheat(); });
+
 // ---------- wall of examples ----------
 function rng(seed){ return ()=>{ seed=seed+0x6D2B79F5|0; let t=Math.imul(seed^seed>>>15,1|seed); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
 let R=Math.random;
@@ -387,7 +431,8 @@ function home(){
     <span class="lab">OOJO game</span>
     <h1>Exquisite<br><em>corpse</em></h1>
   </div>
-  <button class="ghost chip" style="align-self:flex-start;padding-left:0" onclick="$('#wall-top').scrollIntoView({behavior:'smooth'})">See the wall of examples ↓</button>
+  <div class="row" style="gap:4px 16px"><button class="ghost chip" style="padding-left:0" onclick="$('#wall-top').scrollIntoView({behavior:'smooth'})">Examples ↓</button>
+  <button class="ghost chip" style="padding-left:0" onclick="openCheat()">Cheat: look at the masters</button></div>
   <p>Each player adds one part of a figure or a sentence without seeing the rest. Only the fold gives a hint. The whole thing is revealed at the end.</p>
 
   ${resumeBtn()}
@@ -396,9 +441,18 @@ function home(){
       <button aria-pressed="${S.edition==="draw"}" onclick="S.edition='draw';render()">Drawing</button>
       <button aria-pressed="${S.edition==="words"}" onclick="S.edition='words';render()">Words</button>
     </div>
-    <p class="muted" style="font-size:13px">${S.edition==="draw"
-      ? "3 players: head, body, legs. Start from dots. Only the points where your lines cross the fold are passed on."
-      : "4 players: who, does what, to whom, where. Like Consequences. Each player sees only the last word before the fold."}</p>
+    ${S.edition==="draw" ? `<div class="steps" aria-label="How to play Drawing">
+      <div><b>1</b><span><strong>Draw a head.</strong> Start from the dots. Let a few lines run down past the dashed line.</span></div>
+      <div><b>2</b><span><strong>Draw a body.</strong> You only see dots where the lines above ended. Start from those.</span></div>
+      <div><b>3</b><span><strong>Draw legs.</strong> Same again.</span></div>
+      <div class="end">Then unfold it and see the whole creature for the first time.</div>
+    </div>` : `<div class="steps" aria-label="How to play Words">
+      <div><b>1</b><span><strong>Who?</strong> <i>The glass horse</i></span></div>
+      <div><b>2</b><span><strong>Does what?</strong> <i>swallows</i></span></div>
+      <div><b>3</b><span><strong>To whom?</strong> <i>a sleeping lighthouse</i></span></div>
+      <div><b>4</b><span><strong>Where?</strong> <i>under the kitchen sea</i></span></div>
+      <div class="end">One player per line. You only see the last word before yours. Then read the whole sentence out loud.</div>
+    </div>`}
   </div>
 
   <div class="stack">
@@ -408,12 +462,7 @@ function home(){
 
   <hr>
   ${wallHtml()}
-  <hr>
-  <div class="card">
-    <span class="lab">The first one, Paris, 1925</span>
-    <div class="quote"><span>The exquisite corpse</span><span>shall drink</span><span>the new wine.</span></div>
-    <p class="muted" style="font-size:13px">Written by Breton, Tanguy, Prévert and Duhamel, one fold at a time. The game took its name from this sentence.</p>
-  </div>`;
+`;
 }
 
 function startLocal(){ S.mode="local"; S.game=newGame(); S.draft=null; go("turn"); }
@@ -427,7 +476,7 @@ function turn(){
   const t=THEMES[g.theme];
   if(!S.draft) S.draft={strokes:[], text:"", name:store.get("ec-name"), kws: g.edition==="draw"? pick(t.nouns,4) : kwFor(n,t)};
   const d=S.draft;
-  const top=`<div class="topbar"><span class="lab">${g.edition==="draw"?"Drawing":"Words"}</span>${confirmBtn("quit","Quit","Quit game?","ghost chip","quitGame()")}</div>`;
+  const top=`<div class="topbar"><span class="lab">${g.edition==="draw"?"Drawing":"Words"}</span><div class="row" style="gap:2px"><button class="ghost chip" onclick="openCheat()">Cheat</button>${confirmBtn("quit","Quit","Quit game?","ghost chip","quitGame()")}</div></div>`;
   const prog=top+`<div class="progress">${Array.from({length:g.parts},(_,i)=>`<i class="${i<=n?"on":""}"></i>`).join("")}</div>`;
   const kw=`<div class="stack"><div class="row" style="justify-content:space-between"><span class="lab">Need an idea? · ${esc(g.theme)}</span><button class="ghost chip" onclick="reshuffle()">Shuffle</button></div>
     <div class="chips">${d.kws.map(k=>`<button class="chip kw" onclick="useKw(this.textContent)">${esc(k)}</button>`).join("")}</div></div>`;
