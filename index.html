@@ -1,0 +1,637 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="Exquisite corpse: draw or write one part, fold, pass it on, unfold the whole thing together.">
+<meta property="og:title" content="Exquisite corpse"><meta property="og:description" content="Someone folded this paper for you. Add your part without seeing the rest.">
+<meta name="theme-color" content="#f5f5f2">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}[hidden]{display:none!important}img{max-width:100%}</style>
+<title>Exquisite Corpse</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one narrow paper column, like a folded sheet; everything black on off-white. Deliberately single-theme (paper). */
+:root{
+  --paper:#f5f5f2; --ink:#111111; --grey:#8a8a86; --line:#d9d9d4; --wash:#ebebe7;
+  --display:"Instrument Serif", "Times New Roman", serif;
+  --ui:"Geist", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono:"Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+html,body{height:100%}
+body{background:var(--paper);color:var(--ink);font-family:var(--ui);font-size:15px;line-height:1.45;
+  padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));
+  -webkit-tap-highlight-color:transparent}
+.wrap{max-width:520px;margin:0 auto;padding-block:20px 40px;display:flex;flex-direction:column;gap:20px}
+h1,h2{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance;line-height:1.02}
+h1{font-size:clamp(44px, 13vw, 64px);letter-spacing:-.01em}
+h2{font-size:34px}
+em{font-family:var(--display);font-style:italic;font-size:1.15em}
+p{margin:0}
+.lab{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--grey)}
+.muted{color:var(--grey)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.stack{display:flex;flex-direction:column;gap:10px}
+hr{border:0;border-top:1px solid var(--line);margin:0;width:100%}
+
+button,.btn{font:inherit;font-weight:500;border-radius:999px;border:1.5px solid var(--ink);background:transparent;color:var(--ink);
+  padding:11px 18px;cursor:pointer;min-height:44px;transition:background .15s,color .15s}
+button.solid{background:var(--ink);color:var(--paper)}
+button:disabled{opacity:.35;cursor:default}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+button.ghost{border-color:transparent;padding-inline:10px}
+button.wide{width:100%}
+.seg{display:grid;grid-template-columns:1fr 1fr;border:1.5px solid var(--ink);border-radius:14px;overflow:hidden}
+.seg button{border:0;border-radius:0;min-height:52px}
+.seg button+button{border-left:1.5px solid var(--ink)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{font-size:14px;padding:6px 12px;min-height:36px;border-width:1px;border-color:var(--line);font-weight:400}
+.chip[aria-pressed="true"]{border-color:var(--ink);background:var(--ink);color:var(--paper)}
+.chip.kw{font-family:var(--display);font-style:italic;font-size:18px;border-color:var(--ink)}
+input[type=text],textarea{font:inherit;width:100%;box-sizing:border-box;background:transparent;border:0;border-bottom:1.5px solid var(--ink);
+  padding:8px 0;color:var(--ink);border-radius:0}
+textarea{font-family:var(--display);font-size:30px;line-height:1.15;resize:none;min-height:80px}
+
+.sheet{position:relative;background:#fff;border:1px solid var(--line);touch-action:none;user-select:none;-webkit-user-select:none}
+.sheet canvas{display:block;width:100%;height:auto;aspect-ratio:1000/700}
+.tools{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.foldnote{font-family:var(--mono);font-size:11px;letter-spacing:.08em;color:var(--grey);text-transform:uppercase}
+.wordfold{font-family:var(--display);font-size:22px;border-top:1.5px dashed var(--grey);padding-top:10px;color:var(--grey)}
+.wordfold b{color:var(--ink);font-weight:400;font-style:italic}
+
+.card{border:1.5px solid var(--ink);padding:20px;display:flex;flex-direction:column;gap:14px;background:#fff}
+.quote{font-family:var(--display);font-size:30px;line-height:1.08}
+.quote span{display:block}
+.quote span+span{border-top:1px dashed var(--line);padding-top:4px;margin-top:4px}
+
+.handoff{min-height:70vh;display:flex;flex-direction:column;justify-content:center;gap:22px}
+.fold-ill{height:90px;position:relative}
+.fold-ill i{position:absolute;left:0;right:0;height:44px;border:1.5px solid var(--ink);background:#fff}
+.fold-ill i:first-child{top:0;transform-origin:bottom;animation:fold 1.6s ease-in-out infinite alternate}
+.fold-ill i:last-child{top:46px}
+@keyframes fold{from{transform:perspective(400px) rotateX(0)}to{transform:perspective(400px) rotateX(-178deg)}}
+
+.reveal{display:flex;flex-direction:column;background:#fff;border:1px solid var(--line)}
+.reveal .sec{transform-origin:top;transform:perspective(900px) rotateX(-92deg);opacity:0;transition:transform .9s cubic-bezier(.2,.7,.2,1),opacity .4s}
+.reveal .sec.open{transform:none;opacity:1}
+.reveal canvas{display:block;width:100%;height:auto;aspect-ratio:1000/700}
+.reveal .wsec{font-family:var(--display);font-size:clamp(30px, 9vw, 42px);line-height:1.05;padding:16px 20px;border-top:1px dashed var(--line)}
+.reveal .wsec:first-child{border-top:0}
+.credits{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--grey);display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.linkbox{font-family:var(--mono);font-size:12px;background:var(--wash);padding:10px 12px;word-break:break-all;user-select:all;-webkit-user-select:all}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom, 0px));transform:translateX(-50%);background:var(--ink);color:var(--paper);
+  padding:10px 16px;border-radius:999px;font-size:14px;z-index:20}
+.progress{display:flex;gap:4px}
+.progress i{flex:1;height:3px;background:var(--line)}
+.progress i.on{background:var(--ink)}
+.wall{columns:2;column-gap:12px}
+.wall>button{all:unset;box-sizing:border-box;display:block;width:100%;break-inside:avoid;margin-bottom:12px;background:#fff;border:1px solid var(--line);cursor:pointer;transition:border-color .15s}
+.wall>button:hover,.wall>button:focus-visible{border-color:var(--ink)}
+.wall>button:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.wall canvas{display:block;width:100%;height:auto;aspect-ratio:1000/700}
+.wall .wq{font-family:var(--display);font-size:21px;line-height:1.08;padding:14px 12px 4px}
+.wall .tg{font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--grey);padding:8px 12px 10px;border-top:1px dashed var(--line)}
+.wall .wq+.tg{border-top:0}
+.howto{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;counter-reset:st}
+.howto div{border-top:1.5px solid var(--ink);padding-top:8px;font-size:13px;line-height:1.35;min-width:0}
+.howto div::before{counter-increment:st;content:counter(st);display:block;font-family:var(--display);font-size:28px;line-height:1}
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:8px}
+button.warn{background:var(--ink);color:var(--paper)}
+.obj{background:#fff;border:1px solid var(--line);perspective:1100px;display:flex;justify-content:center;padding-block:36px;overflow:hidden;touch-action:pan-y;cursor:grab}
+.rot{width:56%;display:flex;flex-direction:column;transform-style:preserve-3d}
+.pb{position:relative;transform-style:preserve-3d}
+.pb canvas{display:block;width:100%;height:auto;aspect-ratio:1000/700}
+.pb .cp{position:absolute;inset:0}
+.pb .wt{font-family:var(--display);font-size:clamp(22px,6.5vw,30px);line-height:1.05;padding:6px 0;color:var(--ink)}
+.pb .wt.cp{color:#9a9a95}
+.hint{font-size:13px;color:var(--grey);text-align:center}
+@media (prefers-reduced-motion: reduce){
+  .reveal .sec{transition:none}
+  .fold-ill i:first-child{animation:none}
+}
+</style>
+
+</head><body>
+<div class="wrap" id="app"></div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+// ---------- content ----------
+const THEMES = {
+  "Dream zoo": {
+    nouns:["moth","heron","octopus","snail","horse","owl","eel","hare","jellyfish","swan","beetle","giraffe"],
+    adj:["sleeping","glass","upside-down","velvet","hollow","twin","paper","melting"],
+    verbs:["swallows","whispers to","unbuttons","carries","dissolves into","waits for","balances","polishes"],
+    places:["inside a teacup","at the bottom of the stairs","on the moon's back","in a locked drawer","under the sea floor"]
+  },
+  "Kitchen": {
+    nouns:["kettle","fork","egg","colander","teapot","onion","spoon","toaster","whisk","jug","bread","cherry"],
+    adj:["boiling","cracked","silver","nervous","sliced","enamel","forgotten","sugared"],
+    verbs:["stirs","pours itself into","peels","toasts","marries","hides inside","serves","bites"],
+    places:["on a cold plate","behind the fridge","at breakfast forever","in the bread bin","at the end of the table"]
+  },
+  "Machines": {
+    nouns:["gear","antenna","lightbulb","telephone","typewriter","ladder","propeller","magnet","clock","wheel","spring","lens"],
+    adj:["rusty","humming","clockwork","electric","folding","broken","patient","magnetic"],
+    verbs:["rewinds","dials","switches off","assembles","repairs","transmits to","measures","winds up"],
+    places:["in the engine room","at midnight exactly","on a conveyor belt","inside the radio","between two stations"]
+  },
+  "Weather": {
+    nouns:["cloud","lightning","umbrella","fog","snowman","wind","raindrop","hailstone","comet","puddle","kite","weathervane"],
+    adj:["frozen","drifting","thunderous","misty","feathered","sudden","bottled","grey"],
+    verbs:["rains on","blows away","freezes","follows","evaporates into","umbrellas","forecasts","melts"],
+    places:["above the rooftops","in a jar","before the storm","at the edge of the map","inside a sigh"]
+  },
+  "Body": {
+    nouns:["eye","hand","ear","lips","foot","braid","tooth","knee","finger","nose","shoulder","heart"],
+    adj:["single","enormous","shy","wooden","borrowed","folded","sleepless","stitched"],
+    verbs:["listens to","holds","winks at","kisses","grows","counts","forgets","points at"],
+    places:["in a glove","under the skin","in the mirror","on the doorstep","inside a pocket"]
+  }
+};
+const DRAW_PARTS = {3:["Head","Body","Legs"],4:["Head","Torso","Legs","Feet"]};
+const WORD_PARTS = {3:["Who","Does what","To whom"],4:["Who","Does what","To whom","Where"]};
+const WORD_HELP = [
+  ["Who or what? An adjective and a noun.","The glass horse"],
+  ["What does it do? A verb.","swallows"],
+  ["To whom or what? An adjective and a noun.","a sleeping lighthouse"],
+  ["Where or when?","under the kitchen sea"]
+];
+const W = 1000, H = 700, FOLD = 630, LW = 9;
+
+// ---------- small helpers ----------
+const $ = s => document.querySelector(s);
+const rnd = n => Math.floor(Math.random()*n);
+const pick = (arr,n) => { const a=[...arr]; for(let i=a.length-1;i>0;i--){const j=rnd(i+1);[a[i],a[j]]=[a[j],a[i]];} return a.slice(0,n); };
+const esc = s => String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const enc = strokes => strokes.map(s=>s.map(Math.round).join(",")).join("|");
+const dec = str => !str ? [] : str.split("|").map(s=>s.split(",").map(Number));
+let toastT;
+function toast(msg){ const t=$("#toast"); t.textContent=msg; t.hidden=false; clearTimeout(toastT); toastT=setTimeout(()=>t.hidden=true,2200); }
+async function copy(text, btn){
+  try{ await navigator.clipboard.writeText(text); toast("Copied"); }
+  catch(e){ const box=btn?.closest(".stack")?.querySelector(".linkbox"); if(box){ const r=document.createRange(); r.selectNodeContents(box); const s=getSelection(); s.removeAllRanges(); s.addRange(r);} toast("Select the text and copy it"); }
+}
+const store = { get(k){ try{return localStorage.getItem(k)||"";}catch(e){return "";} }, set(k,v){ try{localStorage.setItem(k,v);}catch(e){} } };
+
+// two-tap confirm for anything destructive (the viewer has no confirm dialogs)
+const armed={};
+function confirmBtn(key,label,ask,cls,action){
+  return `<button class="${cls}" id="cb-${key}" onclick="armTap('${key}','${label}','${ask}',()=>{${action}})">${label}</button>`;
+}
+function armTap(key,label,ask,fn){
+  const b=$("#cb-"+key);
+  if(armed[key]){ clearTimeout(armed[key]); armed[key]=0; b.textContent=label; b.classList.remove("warn"); fn(); return; }
+  b.textContent=ask; b.classList.add("warn");
+  armed[key]=setTimeout(()=>{ armed[key]=0; if(b.isConnected){ b.textContent=label; b.classList.remove("warn"); } },3000);
+}
+// ---------- state ----------
+let S = { screen:"home", edition:"draw", theme:"Dream zoo", parts:3, mode:"local", game:null };
+
+function persist(){ if(S.mode!=="local") return; store.set("ec-game", S.game && S.game.turns.length<S.game.parts ? JSON.stringify({g:S.game,d:S.draft,screen:S.screen}) : ""); }
+function savedGame(){ try{ return JSON.parse(store.get("ec-game")||"null"); }catch(e){ return null; } }
+function resumeBtn(){ const sv=savedGame(); if(!sv) return "";
+  return `<div class="card" style="gap:10px"><span class="lab">Unfinished game</span><p>${esc(sv.g.theme)} · ${sv.g.edition==="draw"?"Drawing":"Words"} · ${sv.g.turns.length} of ${sv.g.parts} parts done</p>
+  <div class="row"><button class="solid" onclick="resume()">Continue</button>${confirmBtn("drop","Discard","Discard it?","ghost","store.set('ec-game','');render()")}</div></div>`; }
+function resume(){ const sv=savedGame(); if(!sv) return; S.mode="local"; S.game=sv.g; S.draft=sv.d; go(sv.screen==="turn"?"turn":"handoff"); }
+function quitGame(){ if(S.mode==="local") store.set("ec-game",""); S.game=null; S.draft=null; unsub?.(); location.hash=""; go("home"); }
+function newGame(){
+  return { id: Math.random().toString(36).slice(2,8), edition:S.edition, theme:S.theme, parts:S.parts,
+    start: S.edition==="draw" ? starterDots() : [], turns:[] };
+}
+function starterDots(){
+  const pts=[]; while(pts.length<4){ const p=[120+rnd(760), 110+rnd(440)]; if(pts.every(q=>Math.hypot(q[0]-p[0],q[1]-p[1])>170)) pts.push(p); } return pts;
+}
+// dots where the previous part's lines reach the fold
+function foldDots(strokes){
+  const xs=[];
+  for(const s of strokes){ let best=null; for(let i=0;i<s.length;i+=2){ if(s[i+1]>=FOLD-10 && (!best||s[i+1]>best[1])) best=[s[i],s[i+1]]; } if(best) xs.push(best[0]); }
+  xs.sort((a,b)=>a-b); const out=[];
+  for(const x of xs){ if(!out.length||x-out[out.length-1]>45) out.push(x); }
+  if(!out.length){ return pick([200,340,500,660,800],3).sort((a,b)=>a-b).map(x=>x+rnd(40)-20).map(x=>({x,random:true})); }
+  return out.slice(0,7).map(x=>({x}));
+}
+const partNames = g => (g.edition==="draw"?DRAW_PARTS:WORD_PARTS)[g.parts];
+
+// ---------- drawing ----------
+function paint(ctx, strokes, opts={}){
+  const c=ctx.canvas, k=c.width/W;
+  ctx.setTransform(1,0,0,1,0,0); if(opts.clear) ctx.clearRect(0,0,c.width,c.height); else { ctx.fillStyle="#fff"; ctx.fillRect(0,0,c.width,c.height); }
+  ctx.setTransform(k,0,0,k,0,0);
+  if(opts.guides){
+    ctx.strokeStyle="#c8c8c3"; ctx.lineWidth=2; ctx.setLineDash([10,10]);
+    if(!opts.last){ ctx.beginPath(); ctx.moveTo(0,FOLD); ctx.lineTo(W,FOLD); ctx.stroke();
+      ctx.setLineDash([]); ctx.fillStyle="#9a9a95"; ctx.font="500 20px Geist Mono, monospace"; ctx.fillText("FOLD · CARRY YOUR LINES DOWN HERE", 20, FOLD+40); }
+    ctx.setLineDash([]);
+  }
+  if(opts.dots){ ctx.fillStyle="#111"; for(const d of opts.dots){ ctx.beginPath(); ctx.arc(d.x,10,11,0,7); ctx.fill(); } }
+  if(opts.start){ ctx.fillStyle="#111"; for(const p of opts.start){ ctx.beginPath(); ctx.arc(p[0],p[1],7,0,7); ctx.fill(); } }
+  if(opts.pencil) return pencil(ctx, strokes);
+  ctx.strokeStyle="#111"; ctx.lineWidth=LW; ctx.lineCap="round"; ctx.lineJoin="round";
+  for(const s of strokes){
+    ctx.beginPath();
+    if(s.length<=2){ ctx.arc(s[0],s[1],LW/2,0,7); ctx.fillStyle="#111"; ctx.fill(); continue; }
+    ctx.moveTo(s[0],s[1]);
+    for(let i=2;i<s.length-2;i+=2){ const mx=(s[i]+s[i+2])/2, my=(s[i+1]+s[i+3])/2; ctx.quadraticCurveTo(s[i],s[i+1],mx,my); }
+    ctx.lineTo(s[s.length-2],s[s.length-1]); ctx.stroke();
+  }
+}
+// graphite look: grainy pattern, thin line, two light passes
+let grain=null;
+function grainPattern(ctx){
+  if(!grain){ grain=document.createElement("canvas"); grain.width=grain.height=48; const g=grain.getContext("2d"), im=g.createImageData(48,48);
+    for(let i=0;i<im.data.length;i+=4){ const v=25+Math.random()*60; im.data[i]=im.data[i+1]=im.data[i+2]=v; im.data[i+3]=110+Math.random()*145; } g.putImageData(im,0,0); }
+  return ctx.createPattern(grain,"repeat");
+}
+function pencil(ctx, strokes){
+  ctx.strokeStyle=grainPattern(ctx); ctx.lineCap="round"; ctx.lineJoin="round";
+  for(let pass=0;pass<2;pass++){
+    ctx.lineWidth=pass?3:4.2; ctx.globalAlpha=pass?.55:.85;
+    for(const s of strokes){ const o=pass?1.2:0; ctx.beginPath(); ctx.moveTo(s[0]+o,s[1]);
+      for(let i=2;i<s.length-2;i+=2){ ctx.quadraticCurveTo(s[i]+o,s[i+1]-o,(s[i]+s[i+2])/2+o,(s[i+1]+s[i+3])/2-o); }
+      ctx.lineTo(s[s.length-2]+o,s[s.length-1]); ctx.stroke(); }
+  }
+  ctx.globalAlpha=1;
+}
+function sizeCanvas(c){ const r=c.getBoundingClientRect(), d=Math.min(window.devicePixelRatio||1,3); c.width=Math.round(r.width*d); c.height=Math.round(r.width*d*H/W); }
+
+function mountPad(canvas, strokes, opts){
+  const ctx=canvas.getContext("2d"); let cur=null, raf=0;
+  const redraw=()=>{ raf=0; paint(ctx, cur?[...strokes,cur]:strokes, opts); };
+  const req=()=>{ if(!raf) raf=requestAnimationFrame(redraw); };
+  const pos=e=>{ const r=canvas.getBoundingClientRect(); return [ (e.clientX-r.left)/r.width*W, (e.clientY-r.top)/r.height*H ]; };
+  canvas.addEventListener("pointerdown",e=>{ if(cur) return; canvas.setPointerCapture(e.pointerId); cur=pos(e); req(); e.preventDefault(); });
+  canvas.addEventListener("pointermove",e=>{ if(!cur) return; const evs=e.getCoalescedEvents?e.getCoalescedEvents():[e];
+    for(const ev of evs){ const [x,y]=pos(ev); const lx=cur[cur.length-2], ly=cur[cur.length-1]; if(Math.hypot(x-lx,y-ly)>3) cur.push(Math.max(0,Math.min(W,x)),Math.max(0,Math.min(H,y))); } req(); });
+  const end=()=>{ if(!cur) return; strokes.push(cur); cur=null; req(); opts.onChange?.(); persist(); };
+  canvas.addEventListener("pointerup",end); canvas.addEventListener("pointercancel",end);
+  new ResizeObserver(()=>{ sizeCanvas(canvas); redraw(); }).observe(canvas);
+  return { redraw:req };
+}
+
+// ---------- wall of examples (trend words: Google Trends Belgium, 26 Oct - 1 Nov 2026) ----------
+function rng(seed){ return ()=>{ seed=seed+0x6D2B79F5|0; let t=Math.imul(seed^seed>>>15,1|seed); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+let R=Math.random;
+function wob(p,amt){ const o=[], ph=R()*6, fr=1+R()*2, n=p.length-2||1;
+  for(let i=0;i<p.length;i+=2){ const k=i/n, e=(i===0||i===p.length-2)?.25:1; o.push(p[i]+Math.sin(ph+k*fr*6)*amt*e+(R()-.5)*1.4, p[i+1]+Math.cos(ph+k*fr*5)*amt*e+(R()-.5)*1.4); } return o; }
+function L(...xy){ const o=[]; for(let i=0;i<xy.length-2;i+=2){ const a=xy[i],b=xy[i+1],c=xy[i+2],d=xy[i+3], n=Math.max(2,Math.ceil(Math.hypot(c-a,d-b)/22)); for(let j=0;j<n;j++) o.push(a+(c-a)*j/n,b+(d-b)*j/n); } o.push(xy[xy.length-2],xy[xy.length-1]); return wob(o,4); }
+function A(cx,cy,rx,ry,a0=0,a1=362){ const o=[], n=Math.max(10,Math.ceil(Math.abs(a1-a0)/7)); for(let j=0;j<=n;j++){ const a=(a0+(a1-a0)*j/n)*Math.PI/180; o.push(cx+Math.cos(a)*rx, cy+Math.sin(a)*ry); } return wob(o,Math.min(3.5,Math.max(rx,ry)*.035)); }
+const Ci=(x,y,r)=>A(x,y,r,r);
+function Q(x0,y0,cx,cy,x1,y1){ const o=[]; for(let j=0;j<=16;j++){ const t=j/16,u=1-t; o.push(u*u*x0+2*u*t*cx+t*t*x1, u*u*y0+2*u*t*cy+t*t*y1); } return wob(o,3); }
+const range=(a,b,st)=>{ const r=[]; for(let x=a;x<=b;x+=st) r.push(x); return r; };
+
+const FIGURES = [
+ { tags:["koppenbergcross"], title:"The Koppenberg rider", parts:[
+   ()=>[A(500,330,230,170,180,360),L(270,330,730,330),L(400,230,425,195),L(500,200,500,165),L(600,230,575,195),A(500,440,75,42),Ci(512,440,12),A(500,470,115,70,25,155),L(450,525,450,700),L(550,525,550,700)],
+   ()=>[L(450,0,450,140),L(550,0,550,140),Ci(500,360,220),...range(0,7,1).map(k=>{const a=k*Math.PI/4;return L(500+Math.cos(a)*32,360+Math.sin(a)*32,500+Math.cos(a)*205,360+Math.sin(a)*205);}),Ci(500,360,30),L(290,290,190,220,110,250),L(710,290,820,240,870,160),L(870,160,870,60),L(870,60,950,85,870,115),L(430,575,430,700),L(570,575,570,700)],
+   ()=>[L(430,0,410,200,380,430),L(570,0,590,200,640,430),A(355,450,62,28),A(665,450,62,28),L(40,600,200,525,330,495,480,485,620,478,780,505,960,560),...range(140,860,90).map(x=>L(x,560,x+28,610)),Ci(300,400,6),Ci(720,385,5),Ci(250,455,4),Ci(770,420,7)]
+ ]},
+ { tags:["tanker","halloween"], title:"Pumpkin at sea", parts:[
+   ()=>[A(500,380,210,170),A(420,380,110,165,100,260),A(580,380,110,165,-80,80),Q(500,212,490,150,535,110),L(410,330,450,270,490,330,410,330),L(510,330,550,270,590,330,510,330),L(380,440,420,480,460,445,500,485,540,445,580,480,620,440),L(470,550,470,700),L(530,550,530,700)],
+   ()=>[L(470,0,470,200),L(530,0,530,200),L(140,200,860,200,790,420,210,420,140,200),L(650,200,650,90,770,90,770,200),L(675,130,745,130),L(700,90,700,45,740,45,740,90),A(760,22,28,14,180,500),L(60,470,140,450,220,480,300,455,380,480,460,455,540,480,620,455,700,480,780,455,860,480,940,460),Ci(300,300,16),Ci(380,300,16),L(420,485,420,700),L(580,485,580,700)],
+   ()=>[L(420,0,395,200,440,380),L(580,0,605,200,560,380),L(440,380,370,450),L(440,380,450,470),L(440,380,510,440),L(560,380,490,440),L(560,380,560,470),L(560,380,640,450),A(500,580,42,58)]
+ ]},
+ { tags:["brugge","speelgoed"], title:"Belfry swan on wheels", parts:[
+   ()=>[L(500,30,440,150,560,150,500,30),L(420,150,580,150),L(420,150,420,700),L(580,150,580,700),L(420,200,580,200),A(500,320,55,30),Ci(500,320,12),Ci(500,500,48),L(500,500,500,468),L(500,500,526,516)],
+   ()=>[L(420,0,420,205),L(580,0,580,205),A(500,370,300,170),A(430,380,60,40,0,180),A(530,380,60,40,0,180),A(630,380,60,40,0,180),Q(225,330,140,220,220,130),Ci(205,105,24),L(185,100,120,115,182,120),L(450,535,450,700),L(550,535,550,700)],
+   ()=>[L(450,0,450,200),L(550,0,550,200),L(300,200,700,200,700,380,300,380,300,200),L(340,200,340,140,420,140,420,200),L(600,200,620,150,660,200),Ci(380,440,65),Ci(620,440,65),Ci(380,440,10),Ci(620,440,10),L(80,515,920,515),...range(120,880,80).map(x=>L(x,515,x-15,548))]
+ ]},
+ { tags:["route du rhum"], title:"The single-handed sailor", parts:[
+   ()=>[L(500,40,500,340),L(500,55,700,320,500,320),L(500,40,560,55,500,70),Ci(500,470,125),A(450,460,25,12,0,180),A(550,460,25,12,0,180),L(470,530,530,530),L(460,592,460,700),L(540,592,540,700)],
+   ()=>[L(460,0,460,120),L(540,0,540,120),Q(460,120,340,150,340,250),Q(540,120,660,150,660,250),L(340,250,340,620,660,620,660,250),L(380,330,620,330,620,470,380,470,380,330),L(400,400,450,380,500,410,550,380,600,400),L(440,620,440,700),L(560,620,560,700)],
+   ()=>[L(440,0,480,300),L(560,0,520,300),L(500,300,500,590),L(420,360,580,360),A(500,470,170,130,20,160),L(660,515,690,470),L(340,515,310,470),L(60,640,160,620,260,645,360,620,460,645,560,620,660,645,760,620,860,645,940,630)]
+ ]},
+ { tags:["verkeersbelasting"], title:"Road tax walks home", parts:[
+   ()=>[L(400,60,600,60,600,560,400,560,400,60),Ci(500,160,58),Ci(500,310,58),Ci(500,460,58),Ci(525,160,14),Ci(475,310,14),Ci(500,480,14),L(460,560,460,700),L(540,560,540,700)],
+   ()=>[L(460,0,460,150),L(540,0,540,150),L(220,150,780,150,780,520,220,520,220,150),L(220,150,500,360,780,150),L(680,180,750,180,750,250,680,250,680,180),Ci(715,215,14),L(220,300,110,230,50,300),L(780,300,890,370,950,300),L(400,520,400,700),L(600,520,600,700)],
+   ()=>[L(400,0,380,250,400,435),L(600,0,620,250,600,435),Ci(400,520,85),Ci(600,520,85),Ci(400,520,15),Ci(600,520,15),...range(60,900,110).map(x=>L(x,640,x+60,640))]
+ ]}
+];
+const SENTENCES = [
+ { tags:["koppenbergcross","tanker","staking"], parts:["The muddy Koppenberg cyclist","swallows","a silent oil tanker","during the national strike."] },
+ { tags:["speelgoed","verkeersbelasting","brugge"], parts:["Een vergeten speelgoedtrein","kust","de natte verkeersbelasting","op de Markt van Brugge."] },
+ { tags:["route du rhum","bruxelles","halloween"], parts:["Le marin de la Route du Rhum","offre en cadeau","une citrouille fiscale","au milieu de Bruxelles."] },
+ { tags:["cercle - antwerp","schenking"], parts:["The Cercle goalkeeper's left glove","unbuttons","a gift form for the tax office","at the bottom of a cold canal."] },
+ { tags:["brand","speelgoed","soldaat"], parts:["A small polite fire","measures","the patience of a toy soldier","before the strike ends."] }
+];
+let EX=null;
+function examples(){
+  if(EX) return EX;
+  EX=[];
+  FIGURES.forEach((f,i)=>{ R=rng(7+i*31); EX.push({ id:"d"+i, edition:"draw", theme:f.title, tags:f.tags, parts:3, start:[], pencil:true,
+    turns:f.parts.map(fn=>({strokes:fn().map(s=>s.map(v=>Math.round(v*10)/10)), name:"Example"})) }); });
+  R=Math.random;
+  SENTENCES.forEach((x,i)=>EX.push({ id:"w"+i, edition:"words", theme:"Trending in Belgium", tags:x.tags, parts:x.parts.length, turns:x.parts.map(t=>({text:t,name:"Example"})) }));
+  // interleave drawings and sentences
+  const d=EX.filter(e=>e.edition==="draw"), w=EX.filter(e=>e.edition==="words"); EX=[]; d.forEach((x,i)=>{ EX.push(x); if(w[i]) EX.push(w[i]); });
+  return EX;
+}
+function wallHtml(){
+  return `<div class="stack" id="wall-top"><span class="lab">Wall of examples</span><h2>Made from what Belgium searched</h2>
+  <p class="muted" style="font-size:13px">Every piece uses words that were trending on Google in Belgium at the end of October 2026. Tap one to unfold it.</p></div>
+  <div class="wall">${examples().map((e,i)=>`<button onclick="openExample(${i})" aria-label="Open example ${i+1}">
+    ${e.edition==="draw"? e.turns.map((t,j)=>`<canvas data-ex="${i}" data-p="${j}"></canvas>`).join("") : `<div class="wq">${e.turns.map(t=>esc(t.text)).join(" ")}</div>`}
+    <div class="tg">${e.tags.map(esc).join(" · ")}</div></button>`).join("")}</div>`;
+}
+function paintWall(){
+  document.querySelectorAll(".wall canvas").forEach(c=>{ sizeCanvas(c); paint(c.getContext("2d"), EX[+c.dataset.ex].turns[+c.dataset.p].strokes, {pencil:true}); });
+}
+function openExample(i){ S.mode="example"; S.view3d=false; S.game=EX[i]; go("reveal"); }
+
+// ---------- play over a link: the whole game travels inside the link ----------
+const b64u = bytes => btoa(String.fromCharCode(...bytes)).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+const unb64u = str => Uint8Array.from(atob(str.replace(/-/g,"+").replace(/_/g,"/")), c=>c.charCodeAt(0));
+async function pipe(bytes, stream){ const out=await new Response(new Blob([bytes]).stream().pipeThrough(stream)).arrayBuffer(); return new Uint8Array(out); }
+async function packGame(g){
+  const o={v:1,e:g.edition[0],t:g.theme,n:g.parts,s:g.start.map(p=>p.map(Math.round).join(",")).join("|"),p:g.turns.map(t=>g.edition==="draw"?[enc(t.strokes),t.name||""]:[t.text,t.name||""])};
+  const raw=new TextEncoder().encode(JSON.stringify(o));
+  try{ return "z"+b64u(await pipe(raw,new CompressionStream("deflate-raw"))); }catch(e){ return "j"+b64u(raw); }
+}
+async function unpackGame(str){
+  const kind=str[0], bytes=unb64u(str.slice(1));
+  const raw = kind==="z" ? await pipe(bytes,new DecompressionStream("deflate-raw")) : bytes;
+  const o=JSON.parse(new TextDecoder().decode(raw)), draw=o.e==="d";
+  if(!THEMES[o.t] || ![3,4].includes(o.n)) throw new Error("bad game");
+  return { id:"link", edition:draw?"draw":"words", theme:o.t, parts:o.n, start:o.s?o.s.split("|").map(p=>p.split(",").map(Number)):[],
+    turns:o.p.slice(0,o.n).map(([a,name])=>draw?{strokes:dec(a),name:String(name).slice(0,24)}:{text:String(a).slice(0,70),name:String(name).slice(0,24)}) };
+}
+let LINK="";
+const gameLink = () => LINK;
+async function makeLink(g){ LINK = location.origin + location.pathname + "#p=" + await packGame(g); return LINK; }
+async function routeHash(){
+  const m=/^#p=([zj][A-Za-z0-9_-]+)$/.exec(location.hash); if(!m) return;
+  try{ const g=await unpackGame(m[1]); S.mode="remote"; S.game=g; LINK=location.href; go(g.turns.length>=g.parts ? "reveal" : "join"); }
+  catch(e){ S.screen="missing"; render(); }
+}
+addEventListener("hashchange", routeHash);
+async function shareLink(text, btn){
+  if(navigator.share){ try{ await navigator.share({text}); return; }catch(e){ if(e?.name==="AbortError") return; } }
+  copy(text, btn);
+}
+
+// ---------- screens ----------
+function go(screen){ S.screen=screen; render(); scrollTo(0,0); if(S.game) persist(); }
+
+function render(){
+  const app=$("#app");
+  const f = ({home,turn,handoff,reveal,sent,join,loading:()=>`<p class="muted">Unfolding the paper…</p>`,
+    missing:()=>`<h2>This link doesn't open a game</h2><p class="muted">It may have been cut off when it was shared. Ask for the full link.</p><button class="solid" onclick="location.hash='';go('home')">Start a new one</button>`,
+    noaccess:()=>`<h2>You've been asked to add a part</h2><p class="muted">Sign in to claude.ai to open shared games. Or start your own game on one phone.</p><button class="solid" onclick="location.hash='';go('home')">Start a game</button>`})[S.screen];
+  app.innerHTML = f();
+  after[S.screen]?.();
+}
+const after = {};
+after.home=()=>paintWall();
+
+function home(){
+  const themes=Object.keys(THEMES);
+  return `
+  <div class="stack" style="gap:6px">
+    <span class="lab">Cadavre exquis · since 1925</span>
+    <h1>Exquisite<br><em>corpse</em></h1>
+  </div>
+  <button class="ghost chip" style="align-self:flex-start;padding-left:0" onclick="$('#wall-top').scrollIntoView({behavior:'smooth'})">See the wall of examples ↓</button>
+  <p>Each player adds one part of a figure or a sentence without seeing the rest. Only the fold gives a hint. The whole thing is revealed at the end.</p>
+
+  <div class="howto">
+    <div>Pick an edition and a theme.</div>
+    <div>Add your part. Only the fold is visible.</div>
+    <div>Pass it on. Unfold the whole thing together.</div>
+  </div>
+  ${resumeBtn()}
+  <div class="stack"><span class="lab">Edition</span>
+    <div class="seg">
+      <button aria-pressed="${S.edition==="draw"}" onclick="S.edition='draw';render()">Drawing</button>
+      <button aria-pressed="${S.edition==="words"}" onclick="S.edition='words';render()">Words</button>
+    </div>
+    <p class="muted" style="font-size:13px">${S.edition==="draw"
+      ? "Start from dots. Each part ends at the fold, and only the points where your lines cross it are passed on."
+      : "Like Consequences. Each player writes one piece of the sentence and sees only the last word before the fold."}</p>
+  </div>
+
+  <div class="stack"><span class="lab">Theme · suggests keywords</span>
+    <div class="chips">${themes.map(t=>`<button class="chip" aria-pressed="${S.theme===t}" onclick="S.theme='${t}';render()">${t}</button>`).join("")}</div>
+  </div>
+
+  <div class="stack"><span class="lab">Parts</span>
+    <div class="chips">${[3,4].map(n=>`<button class="chip" aria-pressed="${S.parts===n}" onclick="S.parts=${n};render()">${n} · ${(S.edition==="draw"?DRAW_PARTS:WORD_PARTS)[n].join(", ").toLowerCase()}</button>`).join("")}</div>
+  </div>
+
+  <div class="stack">
+    <button class="solid wide" onclick="startLocal()">Play on this phone · pass it around</button>
+    <button class="wide" onclick="startRemote()">Play over a link · one part each</button>
+  </div>
+
+  <hr>
+  ${wallHtml()}
+  <hr>
+  <div class="card">
+    <span class="lab">The first one, Paris, 1925</span>
+    <div class="quote"><span>The exquisite corpse</span><span>shall drink</span><span>the new wine.</span></div>
+    <p class="muted" style="font-size:13px">Written by Breton, Tanguy, Prévert and Duhamel, one fold at a time. The game took its name from this sentence.</p>
+  </div>`;
+}
+
+function startLocal(){ S.mode="local"; S.game=newGame(); S.draft=null; go("turn"); }
+async function startRemote(){
+  S.mode="remote"; S.game=newGame(); S.draft=null;
+  go("turn");
+}
+
+function turn(){
+  const g=S.game, n=g.turns.length, names=partNames(g), last=n===g.parts-1;
+  const t=THEMES[g.theme];
+  if(!S.draft) S.draft={strokes:[], text:"", name:store.get("ec-name"), kws: g.edition==="draw"? pick(t.nouns,4) : kwFor(n,t)};
+  const d=S.draft;
+  const top=`<div class="topbar"><span class="lab">${esc(g.theme)} · ${g.edition==="draw"?"Drawing":"Words"}</span>${confirmBtn("quit","Quit","Quit game?","ghost chip","quitGame()")}</div>`;
+  const prog=top+`<div class="progress">${Array.from({length:g.parts},(_,i)=>`<i class="${i<=n?"on":""}"></i>`).join("")}</div>`;
+  const kw=`<div class="stack"><div class="row" style="justify-content:space-between"><span class="lab">Need an idea? · ${esc(g.theme)}</span><button class="ghost chip" onclick="reshuffle()">Shuffle</button></div>
+    <div class="chips">${d.kws.map(k=>`<button class="chip kw" onclick="useKw(this.textContent)">${esc(k)}</button>`).join("")}</div></div>`;
+  const sign=`<input type="text" id="sign" maxlength="24" placeholder="Sign your part (optional)" value="${esc(d.name)}" oninput="S.draft.name=this.value">`;
+  if(g.edition==="draw"){
+    const intro = n===0 ? `Start from the four dots. Draw the <b>${names[n].toLowerCase()}</b> of a creature.` :
+      `The dots at the top are where the last player's lines cross the fold. Pick them up and draw the <b>${names[n].toLowerCase()}</b>.`;
+    return `${prog}
+    <div class="stack" style="gap:4px"><span class="lab">Part ${n+1} of ${g.parts}</span><h2>${names[n]}</h2></div>
+    <p>${intro}${last?"":" Carry some lines down past the fold."}</p>
+    <div class="sheet"><canvas id="pad"></canvas></div>
+    <div class="tools"><div class="row"><button onclick="undo()">Undo</button>${confirmBtn("clear","Clear","Clear all?","ghost","clearPad()")}</div>
+      <span class="foldnote" id="cnt"></span></div>
+    ${kw}${sign}
+    <button class="solid wide" id="done" onclick="finishTurn()">${last?"Finish and reveal":"Fold and pass on"}</button>`;
+  }
+  const prev=n>0? g.turns[n-1].text.trim().split(/\s+/).pop() : "";
+  return `${prog}
+    <div class="stack" style="gap:4px"><span class="lab">Part ${n+1} of ${g.parts}</span><h2>${WORD_PARTS[g.parts][n]}</h2></div>
+    <p>${WORD_HELP[n][0]}</p>
+    ${n>0?`<div class="wordfold">…<b>${esc(prev)}</b></div>`:""}
+    <textarea id="txt" maxlength="70" rows="2" placeholder="${esc(WORD_HELP[n][1])}" oninput="S.draft.text=this.value;persist();$('#done').disabled=!this.value.trim()">${esc(d.text)}</textarea>
+    ${kw}${sign}
+    <button class="solid wide" id="done" ${d.text.trim()?"":"disabled"} onclick="finishTurn()">${last?"Finish and reveal":"Fold and pass on"}</button>`;
+}
+function kwFor(n,t){
+  if(n===1) return pick(t.verbs,4);
+  if(n===3) return pick(t.places,3);
+  return pick(t.adj,2).concat(pick(t.nouns,2));
+}
+let pad=null;
+after.turn=()=>{
+  const g=S.game, n=g.turns.length;
+  if(g.edition!=="draw"){ return; }
+  const opts={ guides:true, last:n===g.parts-1, start:n===0?g.start:null, dots:n>0?foldDots(g.turns[n-1].strokes):null, onChange:updCount };
+  pad=mountPad($("#pad"), S.draft.strokes, opts); updCount();
+};
+function updCount(){ const c=$("#cnt"); if(!c) return; const g=S.game, n=g.turns.length; if(n===g.parts-1){ c.textContent=""; $("#done").disabled=!S.draft.strokes.length; return; }
+  const k=S.draft.strokes.filter(s=>s.some((v,i)=>i%2&&v>=FOLD-10)).length; c.textContent=k+" line"+(k===1?"":"s")+" at the fold"; $("#done").disabled=!S.draft.strokes.length; }
+function undo(){ S.draft.strokes.pop(); pad?.redraw(); updCount(); persist(); }
+function clearPad(){ S.draft.strokes.length=0; pad?.redraw(); updCount(); persist(); toast('Cleared'); }
+function reshuffle(){ const g=S.game, t=THEMES[g.theme]; S.draft.kws = g.edition==="draw"? pick(t.nouns,4) : kwFor(g.turns.length,t); render(); }
+function useKw(k){
+  if(S.game.edition==="draw"){ toast("Draw a "+k.toLowerCase()); return; }
+  const ta=$("#txt"); ta.value=(ta.value.trim()+" "+k).trim(); S.draft.text=ta.value; $("#done").disabled=false; ta.focus();
+}
+async function finishTurn(){
+  const g=S.game, d=S.draft, n=g.turns.length;
+  const t={strokes:d.strokes, text:d.text.trim(), name:(d.name||"").trim()};
+  if(t.name) store.set("ec-name", t.name);
+  if(S.mode==="remote"){
+    g.turns.push(t); S.draft=null; await makeLink(g);
+    history.replaceState(null,"",location.pathname);
+  } else { g.turns.push(t); S.draft=null; }
+  if(g.turns.length>=g.parts){ if(S.mode==="local") store.set("ec-game",""); return go("reveal"); }
+  go(S.mode==="remote" ? "sent" : "handoff");
+}
+
+function handoff(){
+  const g=S.game, n=g.turns.length;
+  return `<div class="handoff">
+    <div class="fold-ill"><i></i><i></i></div>
+    <span class="lab">Part ${n} done</span>
+    <h2>Fold. Pass the phone to the next player.</h2>
+    <p class="muted">No peeking. The next player draws the ${esc(partNames(g)[n].toLowerCase())} from ${g.edition==="draw"?"the dots at the fold":"the last word"} only.</p>
+    <button class="solid wide" onclick="go('turn')">I'm the next player</button>
+  </div>`;
+}
+
+function shareText(g){
+  const done=g.turns.length, part=partNames(g)[done]?.toLowerCase();
+  return g.edition==="draw"
+    ? `I just drew part ${done} of an exquisite corpse. Can you draw the ${part} without seeing the rest? ${gameLink(g)}`
+    : `I wrote part ${done} of an exquisite corpse sentence. Can you write the next bit blind? ${gameLink(g)}`;
+}
+function sent(){
+  const g=S.game, link=gameLink(g);
+  return `<div class="fold-ill"><i></i><i></i></div>
+  <div class="stack" style="gap:4px"><span class="lab">Folded · ${g.turns.length} of ${g.parts} parts done</span>
+  <h2>Now send it to the next player</h2></div>
+  <p>They will only see ${g.edition==="draw"?"the dots where your lines cross the fold":"your last word"}. Whoever adds the last part gets the reveal and can send it back to everyone.</p>
+  <div class="stack"><span class="lab">Game link</span>
+    <div class="linkbox" style="max-height:4.6em;overflow:hidden">${esc(link)}</div>
+    <div class="row"><button class="solid" onclick="shareLink(shareText(S.game),this)">Send to the next player</button>
+    <button onclick="copy(gameLink(S.game),this)">Copy link</button></div>
+  </div>
+  <button class="ghost" onclick="location.hash='';go('home')">Back to start</button>`;
+}
+
+function join(){
+  const g=S.game, n=g.turns.length, names=partNames(g);
+  const who=g.turns.map(t=>t.name).filter(Boolean);
+  return `<div class="fold-ill"><i></i><i></i></div>
+  <span class="lab">${esc(g.theme)} · ${g.edition==="draw"?"Drawing":"Words"}</span>
+  <h2>${who.length?esc(who.join(", "))+" folded":"Someone folded"} this paper for you</h2>
+  <p>You're adding part ${n+1} of ${g.parts}: the <b>${esc(names[n].toLowerCase())}</b>. You won't see what came before, only ${g.edition==="draw"?"the dots at the fold":"the last word"}.</p>
+  <button class="solid wide" onclick="S.draft=null;go('turn')">Unfold my part</button>`;
+}
+
+function reveal(){
+  const g=S.game, who=g.turns.map((t,i)=>t.name||("Player "+(i+1)));
+  const body = g.edition==="draw"
+    ? g.turns.map((t,i)=>`<div class="sec"><canvas data-i="${i}"></canvas></div>`).join("")
+    : g.turns.map(t=>`<div class="sec wsec">${esc(t.text)}</div>`).join("");
+  const ex=S.mode==="example";
+  return `${ex?`<button class="ghost chip" style="align-self:flex-start;padding-left:0" onclick="go('home');setTimeout(()=>$('#wall-top')?.scrollIntoView(),50)">← Back to the wall</button>`:""}
+  <div class="stack" style="gap:4px"><span class="lab">${ex?"Example · "+esc(g.tags.join(" · ")):esc(g.theme)+" · unfolded"}</span><h2>${ex&&g.edition==="draw"?esc(g.theme):"The reveal"}</h2></div>
+  <div class="seg"><button aria-pressed="${!S.view3d}" onclick="S.view3d=false;render()">Unfolded</button><button aria-pressed="${!!S.view3d}" onclick="S.view3d=true;render()">As an object</button></div>
+  ${S.view3d ? `<div class="obj" id="obj"><div class="rot" id="rot"></div></div><p class="hint">Drag to turn it. A first sketch of how it could become a printed object.</p>`
+    : `<div class="reveal" id="rv">${body}</div>`}
+  <div class="credits" ${ex?"hidden":""}>${who.map((w,i)=>`<span>${esc(partNames(g)[i])} · ${esc(w)}</span>`).join("")}</div>
+  <div class="stack">
+    <button class="solid wide" onclick="saveImage(this)">Save image</button>
+    ${g.edition==="words"?`<button class="wide" onclick="copy(wordsText(S.game),this)">Copy the sentence</button>`:""}
+    ${S.mode==="remote"?`<button class="wide" onclick="revealShare(this)">Send the reveal to everyone</button>`:""}
+    <button class="ghost wide" onclick="location.hash='';S.game=null;S.view3d=false;go('home')">${ex?"Make your own":"Play again"}</button>
+  </div>`;
+}
+after.reveal=()=>{
+  const g=S.game;
+  if(S.view3d) return build3d();
+  document.querySelectorAll("#rv canvas").forEach(c=>{ const i=+c.dataset.i; sizeCanvas(c); paint(c.getContext("2d"), g.turns[i].strokes, {start:i===0?g.start:null, pencil:g.pencil}); });
+  const secs=[...document.querySelectorAll("#rv .sec")];
+  const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
+  secs.forEach((s,i)=> reduce ? s.classList.add("open") : setTimeout(()=>s.classList.add("open"), 300+i*750));
+};
+let spin=0;
+function build3d(){
+  const g=S.game, rot=$("#rot"), COPIES=5, DEPTH=[0,-38,22,-26];
+  g.turns.forEach((t,i)=>{
+    const pb=document.createElement("div"); pb.className="pb";
+    for(let k=0;k<COPIES;k++){
+      const z=DEPTH[i%4]-k*3;
+      if(g.edition==="draw"){
+        const c=document.createElement("canvas"); c.width=600; c.height=420; if(k) c.className="cp";
+        c.style.transform=`translateZ(${z}px)`; pb.appendChild(c);
+        paint(c.getContext("2d"), t.strokes, {clear:true, start:i===0?g.start:null, pencil:g.pencil});
+      }else{
+        const d=document.createElement("div"); d.className="wt"+(k?" cp":""); d.textContent=t.text; d.style.transform=`translateZ(${z}px)`; pb.appendChild(d);
+      }
+    }
+    rot.appendChild(pb);
+  });
+  const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let ang=-25, drag=null, id=++spin;
+  const obj=$("#obj");
+  const tick=()=>{ if(id!==spin||!rot.isConnected) return; if(!drag&&!reduce) ang+=0.35; rot.style.transform=`rotateX(-8deg) rotateY(${ang}deg)`; requestAnimationFrame(tick); };
+  obj.addEventListener("pointerdown",e=>{ drag={x:e.clientX,a:ang}; obj.setPointerCapture(e.pointerId); });
+  obj.addEventListener("pointermove",e=>{ if(drag) ang=drag.a+(e.clientX-drag.x)*0.6; });
+  const up=()=>drag=null; obj.addEventListener("pointerup",up); obj.addEventListener("pointercancel",up);
+  rot.style.transform=`rotateX(-8deg) rotateY(${ang}deg)`; tick();
+}
+const wordsText = g => g.turns.map(t=>t.text).join(" ").replace(/\s+/g," ").trim().replace(/^./,c=>c.toUpperCase()).replace(/([^.!?])$/,"$1.");
+
+async function composeImage(){
+  await document.fonts?.ready;
+  const g=S.game, M=70, names=g.turns.map((t,i)=>t.name||("Player "+(i+1)));
+  const c=document.createElement("canvas"); const x=c.getContext("2d");
+  if(g.edition==="draw"){
+    c.width=W+M*2; c.height=H*g.parts+M*2+60;
+    x.fillStyle="#f5f5f2"; x.fillRect(0,0,c.width,c.height);
+    g.turns.forEach((t,i)=>{ const sc=document.createElement("canvas"); sc.width=W; sc.height=H; paint(sc.getContext("2d"), t.strokes, {start:i===0?g.start:null, pencil:g.pencil}); x.drawImage(sc,M,M+i*H); });
+  }else{
+    c.width=1140; const lines=[]; x.font="68px 'Instrument Serif', serif";
+    g.turns.forEach(t=>{ let line=""; for(const w of t.text.split(/\s+/)){ const tr=(line+" "+w).trim(); if(x.measureText(tr).width>c.width-M*2 && line){ lines.push(line); line=w; } else line=tr; } lines.push(line); lines.push(""); });
+    lines.pop(); c.height=M*2+lines.length*80+80;
+    x.fillStyle="#f5f5f2"; x.fillRect(0,0,c.width,c.height); x.fillStyle="#111"; x.font="68px 'Instrument Serif', serif";
+    lines.forEach((l,i)=>x.fillText(l,M,M+60+i*80));
+  }
+  x.fillStyle="#8a8a86"; x.font="500 20px 'Geist Mono', monospace";
+  x.fillText(("EXQUISITE CORPSE · "+g.theme+" · "+names.join(", ")).toUpperCase(), M, c.height-M+10);
+  return new Promise(r=>c.toBlob(r,"image/png"));
+}
+async function saveImage(btn){
+  btn.disabled=true;
+  try{
+    const blob=await composeImage();
+    const file=new File([blob],"exquisite-corpse.png",{type:"image/png"});
+    if(navigator.canShare?.({files:[file]})){ try{ await navigator.share({files:[file]}); }catch(e){} }
+    else { const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=file.name; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),4000); }
+  }catch(e){ toast("The image was not saved."); }
+  btn.disabled=false;
+}
+
+async function revealShare(btn){
+  const g=S.game; if(!LINK.includes("#p=")) await makeLink(g);
+  shareLink((g.edition==="draw"?"Our exquisite corpse is finished. Unfold it: ":"Our exquisite corpse sentence is finished. Unfold it: ")+LINK, btn);
+}
+render();
+routeHash();
+</script>
+
+</body></html>
