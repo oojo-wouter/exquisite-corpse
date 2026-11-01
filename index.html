@@ -87,7 +87,7 @@ textarea{font-family:var(--display);font-size:30px;line-height:1.15;resize:none;
 .wall>button:hover,.wall>button:focus-visible{border-color:var(--ink)}
 .wall>button:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
 .wall canvas{display:block;width:100%;height:auto;aspect-ratio:1000/700}
-.wall .wq{font-family:var(--display);font-size:21px;line-height:1.08;padding:14px 12px 4px}
+.wall .wq{font-family:var(--display);font-size:21px;line-height:1.08;padding:14px 12px}
 .wall .tg{font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--grey);padding:8px 12px 10px;border-top:1px dashed var(--line)}
 .wall .wq+.tg{border-top:0}
 .howto{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;counter-reset:st}
@@ -189,12 +189,12 @@ let S = { screen:"home", edition:"draw", theme:"Dream zoo", parts:3, mode:"local
 function persist(){ if(S.mode!=="local") return; store.set("ec-game", S.game && S.game.turns.length<S.game.parts ? JSON.stringify({g:S.game,d:S.draft,screen:S.screen}) : ""); }
 function savedGame(){ try{ return JSON.parse(store.get("ec-game")||"null"); }catch(e){ return null; } }
 function resumeBtn(){ const sv=savedGame(); if(!sv) return "";
-  return `<div class="card" style="gap:10px"><span class="lab">Unfinished game</span><p>${esc(sv.g.theme)} · ${sv.g.edition==="draw"?"Drawing":"Words"} · ${sv.g.turns.length} of ${sv.g.parts} parts done</p>
+  return `<div class="card" style="gap:10px"><span class="lab">Unfinished game</span><p>${sv.g.edition==="draw"?"Drawing":"Words"} · ${sv.g.turns.length} of ${sv.g.parts} parts done</p>
   <div class="row"><button class="solid" onclick="resume()">Continue</button>${confirmBtn("drop","Discard","Discard it?","ghost","store.set('ec-game','');render()")}</div></div>`; }
 function resume(){ const sv=savedGame(); if(!sv) return; S.mode="local"; S.game=sv.g; S.draft=sv.d; go(sv.screen==="turn"?"turn":"handoff"); }
 function quitGame(){ if(S.mode==="local") store.set("ec-game",""); S.game=null; S.draft=null; unsub?.(); location.hash=""; go("home"); }
 function newGame(){
-  return { id: Math.random().toString(36).slice(2,8), edition:S.edition, theme:S.theme, parts:S.parts,
+  return { id: Math.random().toString(36).slice(2,8), edition:S.edition, theme:S.theme, parts:S.edition==="draw"?3:4,
     start: S.edition==="draw" ? starterDots() : [], turns:[] };
 }
 function starterDots(){
@@ -267,7 +267,7 @@ function mountPad(canvas, strokes, opts){
   return { redraw:req };
 }
 
-// ---------- wall of examples (trend words: Google Trends Belgium, 26 Oct - 1 Nov 2026) ----------
+// ---------- wall of examples ----------
 function rng(seed){ return ()=>{ seed=seed+0x6D2B79F5|0; let t=Math.imul(seed^seed>>>15,1|seed); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
 let R=Math.random;
 function wob(p,amt){ const o=[], ph=R()*6, fr=1+R()*2, n=p.length-2||1;
@@ -325,11 +325,11 @@ function examples(){
   return EX;
 }
 function wallHtml(){
-  return `<div class="stack" id="wall-top"><span class="lab">Wall of examples</span><h2>Made from what Belgium searched</h2>
-  <p class="muted" style="font-size:13px">Every piece uses words that were trending on Google in Belgium at the end of October 2026. Tap one to unfold it.</p></div>
+  return `<div class="stack" id="wall-top"><span class="lab">Wall of examples</span><h2>What it can become</h2>
+  <p class="muted" style="font-size:13px">Tap one to unfold it.</p></div>
   <div class="wall">${examples().map((e,i)=>`<button onclick="openExample(${i})" aria-label="Open example ${i+1}">
     ${e.edition==="draw"? e.turns.map((t,j)=>`<canvas data-ex="${i}" data-p="${j}"></canvas>`).join("") : `<div class="wq">${e.turns.map(t=>esc(t.text)).join(" ")}</div>`}
-    <div class="tg">${e.tags.map(esc).join(" · ")}</div></button>`).join("")}</div>`;
+    ${e.edition==="draw"?`<div class="tg">${esc(e.theme)}</div>`:""}</button>`).join("")}</div>`;
 }
 function paintWall(){
   document.querySelectorAll(".wall canvas").forEach(c=>{ sizeCanvas(c); paint(c.getContext("2d"), EX[+c.dataset.ex].turns[+c.dataset.p].strokes, {pencil:true}); });
@@ -349,7 +349,7 @@ async function unpackGame(str){
   const kind=str[0], bytes=unb64u(str.slice(1));
   const raw = kind==="z" ? await pipe(bytes,new DecompressionStream("deflate-raw")) : bytes;
   const o=JSON.parse(new TextDecoder().decode(raw)), draw=o.e==="d";
-  if(!THEMES[o.t] || ![3,4].includes(o.n)) throw new Error("bad game");
+  if(![3,4].includes(o.n)) throw new Error("bad game");
   return { id:"link", edition:draw?"draw":"words", theme:o.t, parts:o.n, start:o.s?o.s.split("|").map(p=>p.split(",").map(Number)):[],
     turns:o.p.slice(0,o.n).map(([a,name])=>draw?{strokes:dec(a),name:String(name).slice(0,24)}:{text:String(a).slice(0,70),name:String(name).slice(0,24)}) };
 }
@@ -382,20 +382,14 @@ const after = {};
 after.home=()=>paintWall();
 
 function home(){
-  const themes=Object.keys(THEMES);
   return `
   <div class="stack" style="gap:6px">
-    <span class="lab">Cadavre exquis · since 1925</span>
+    <span class="lab">OOJO game</span>
     <h1>Exquisite<br><em>corpse</em></h1>
   </div>
   <button class="ghost chip" style="align-self:flex-start;padding-left:0" onclick="$('#wall-top').scrollIntoView({behavior:'smooth'})">See the wall of examples ↓</button>
   <p>Each player adds one part of a figure or a sentence without seeing the rest. Only the fold gives a hint. The whole thing is revealed at the end.</p>
 
-  <div class="howto">
-    <div>Pick an edition and a theme.</div>
-    <div>Add your part. Only the fold is visible.</div>
-    <div>Pass it on. Unfold the whole thing together.</div>
-  </div>
   ${resumeBtn()}
   <div class="stack"><span class="lab">Edition</span>
     <div class="seg">
@@ -403,16 +397,8 @@ function home(){
       <button aria-pressed="${S.edition==="words"}" onclick="S.edition='words';render()">Words</button>
     </div>
     <p class="muted" style="font-size:13px">${S.edition==="draw"
-      ? "Start from dots. Each part ends at the fold, and only the points where your lines cross it are passed on."
-      : "Like Consequences. Each player writes one piece of the sentence and sees only the last word before the fold."}</p>
-  </div>
-
-  <div class="stack"><span class="lab">Theme · suggests keywords</span>
-    <div class="chips">${themes.map(t=>`<button class="chip" aria-pressed="${S.theme===t}" onclick="S.theme='${t}';render()">${t}</button>`).join("")}</div>
-  </div>
-
-  <div class="stack"><span class="lab">Parts</span>
-    <div class="chips">${[3,4].map(n=>`<button class="chip" aria-pressed="${S.parts===n}" onclick="S.parts=${n};render()">${n} · ${(S.edition==="draw"?DRAW_PARTS:WORD_PARTS)[n].join(", ").toLowerCase()}</button>`).join("")}</div>
+      ? "3 players: head, body, legs. Start from dots. Only the points where your lines cross the fold are passed on."
+      : "4 players: who, does what, to whom, where. Like Consequences. Each player sees only the last word before the fold."}</p>
   </div>
 
   <div class="stack">
@@ -441,7 +427,7 @@ function turn(){
   const t=THEMES[g.theme];
   if(!S.draft) S.draft={strokes:[], text:"", name:store.get("ec-name"), kws: g.edition==="draw"? pick(t.nouns,4) : kwFor(n,t)};
   const d=S.draft;
-  const top=`<div class="topbar"><span class="lab">${esc(g.theme)} · ${g.edition==="draw"?"Drawing":"Words"}</span>${confirmBtn("quit","Quit","Quit game?","ghost chip","quitGame()")}</div>`;
+  const top=`<div class="topbar"><span class="lab">${g.edition==="draw"?"Drawing":"Words"}</span>${confirmBtn("quit","Quit","Quit game?","ghost chip","quitGame()")}</div>`;
   const prog=top+`<div class="progress">${Array.from({length:g.parts},(_,i)=>`<i class="${i<=n?"on":""}"></i>`).join("")}</div>`;
   const kw=`<div class="stack"><div class="row" style="justify-content:space-between"><span class="lab">Need an idea? · ${esc(g.theme)}</span><button class="ghost chip" onclick="reshuffle()">Shuffle</button></div>
     <div class="chips">${d.kws.map(k=>`<button class="chip kw" onclick="useKw(this.textContent)">${esc(k)}</button>`).join("")}</div></div>`;
@@ -455,7 +441,7 @@ function turn(){
     <div class="sheet"><canvas id="pad"></canvas></div>
     <div class="tools"><div class="row"><button onclick="undo()">Undo</button>${confirmBtn("clear","Clear","Clear all?","ghost","clearPad()")}</div>
       <span class="foldnote" id="cnt"></span></div>
-    ${kw}${sign}
+    ${sign}
     <button class="solid wide" id="done" onclick="finishTurn()">${last?"Finish and reveal":"Fold and pass on"}</button>`;
   }
   const prev=n>0? g.turns[n-1].text.trim().split(/\s+/).pop() : "";
@@ -464,7 +450,7 @@ function turn(){
     <p>${WORD_HELP[n][0]}</p>
     ${n>0?`<div class="wordfold">…<b>${esc(prev)}</b></div>`:""}
     <textarea id="txt" maxlength="70" rows="2" placeholder="${esc(WORD_HELP[n][1])}" oninput="S.draft.text=this.value;persist();$('#done').disabled=!this.value.trim()">${esc(d.text)}</textarea>
-    ${kw}${sign}
+    ${sign}
     <button class="solid wide" id="done" ${d.text.trim()?"":"disabled"} onclick="finishTurn()">${last?"Finish and reveal":"Fold and pass on"}</button>`;
 }
 function kwFor(n,t){
@@ -535,7 +521,7 @@ function join(){
   const g=S.game, n=g.turns.length, names=partNames(g);
   const who=g.turns.map(t=>t.name).filter(Boolean);
   return `<div class="fold-ill"><i></i><i></i></div>
-  <span class="lab">${esc(g.theme)} · ${g.edition==="draw"?"Drawing":"Words"}</span>
+  <span class="lab">${g.edition==="draw"?"Drawing":"Words"}</span>
   <h2>${who.length?esc(who.join(", "))+" folded":"Someone folded"} this paper for you</h2>
   <p>You're adding part ${n+1} of ${g.parts}: the <b>${esc(names[n].toLowerCase())}</b>. You won't see what came before, only ${g.edition==="draw"?"the dots at the fold":"the last word"}.</p>
   <button class="solid wide" onclick="S.draft=null;go('turn')">Unfold my part</button>`;
@@ -548,7 +534,7 @@ function reveal(){
     : g.turns.map(t=>`<div class="sec wsec">${esc(t.text)}</div>`).join("");
   const ex=S.mode==="example";
   return `${ex?`<button class="ghost chip" style="align-self:flex-start;padding-left:0" onclick="go('home');setTimeout(()=>$('#wall-top')?.scrollIntoView(),50)">← Back to the wall</button>`:""}
-  <div class="stack" style="gap:4px"><span class="lab">${ex?"Example · "+esc(g.tags.join(" · ")):esc(g.theme)+" · unfolded"}</span><h2>${ex&&g.edition==="draw"?esc(g.theme):"The reveal"}</h2></div>
+  <div class="stack" style="gap:4px"><span class="lab">${ex?"Example":"Unfolded"}</span><h2>${ex&&g.edition==="draw"?esc(g.theme):"The reveal"}</h2></div>
   <div class="seg"><button aria-pressed="${!S.view3d}" onclick="S.view3d=false;render()">Unfolded</button><button aria-pressed="${!!S.view3d}" onclick="S.view3d=true;render()">As an object</button></div>
   ${S.view3d ? `<div class="obj" id="obj"><div class="rot" id="rot"></div></div><p class="hint">Drag to turn it. A first sketch of how it could become a printed object.</p>`
     : `<div class="reveal" id="rv">${body}</div>`}
@@ -612,7 +598,7 @@ async function composeImage(){
     lines.forEach((l,i)=>x.fillText(l,M,M+60+i*80));
   }
   x.fillStyle="#8a8a86"; x.font="500 20px 'Geist Mono', monospace";
-  x.fillText(("EXQUISITE CORPSE · "+g.theme+" · "+names.join(", ")).toUpperCase(), M, c.height-M+10);
+  x.fillText(("EXQUISITE CORPSE · "+(g.edition==="draw"&&g.tags?g.theme+" · ":"")+names.join(", ")).toUpperCase(), M, c.height-M+10);
   return new Promise(r=>c.toBlob(r,"image/png"));
 }
 async function saveImage(btn){
