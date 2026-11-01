@@ -106,6 +106,8 @@ textarea{font-family:var(--display);font-size:30px;line-height:1.15;resize:none;
 .steps b{font-family:var(--display);font-weight:400;font-size:24px;line-height:1}
 .steps i{font-family:var(--display);font-size:17px}
 .steps .end{grid-template-columns:1fr;color:var(--grey);font-size:13px}
+.sharegrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+a.btn{display:flex;align-items:center;justify-content:center;text-decoration:none;box-sizing:border-box;text-align:center;font-size:14px;padding:10px 8px}
 .howto{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;counter-reset:st}
 .howto div{border-top:1.5px solid var(--ink);padding-top:8px;font-size:13px;line-height:1.35;min-width:0}
 .howto div::before{counter-increment:st;content:counter(st);display:block;font-family:var(--display);font-size:28px;line-height:1}
@@ -406,6 +408,18 @@ async function routeHash(){
   catch(e){ S.screen="missing"; render(); }
 }
 addEventListener("hashchange", routeHash);
+function shareGrid(msg, link, subject){
+  const e=encodeURIComponent, full=msg+" "+link;
+  const opts=[
+    ["WhatsApp","https://wa.me/?text="+e(full)],
+    ["Email","mailto:?subject="+e(subject)+"&body="+e(full)],
+    ["Messages","sms:?&body="+e(full)],
+    ["Telegram","https://t.me/share/url?url="+e(link)+"&text="+e(msg)],
+    ["X","https://x.com/intent/post?text="+e(full)],
+  ];
+  return `<div class="sharegrid">${opts.map(([n,u])=>`<a class="btn" href="${esc(u)}" target="_blank" rel="noopener">${n}</a>`).join("")}
+    <button style="font-size:14px;padding:10px 8px" onclick="copy(${esc(JSON.stringify(link))},this)">Copy link</button></div>`;
+}
 async function shareLink(text, btn){
   if(navigator.share){ try{ await navigator.share({text}); return; }catch(e){ if(e?.name==="AbortError") return; } }
   copy(text, btn);
@@ -546,22 +560,23 @@ function handoff(){
   </div>`;
 }
 
-function shareText(g){
+function shareMsg(g){
   const done=g.turns.length, part=partNames(g)[done]?.toLowerCase();
   return g.edition==="draw"
-    ? `I just drew part ${done} of an exquisite corpse. Can you draw the ${part} without seeing the rest? ${gameLink(g)}`
-    : `I wrote part ${done} of an exquisite corpse sentence. Can you write the next bit blind? ${gameLink(g)}`;
+    ? `I just drew part ${done} of an exquisite corpse. Can you draw the ${part} without seeing the rest?`
+    : `I wrote part ${done} of an exquisite corpse sentence. Can you write the next line blind?`;
 }
+const shareText = g => shareMsg(g)+" "+gameLink(g);
+const revealMsg = g => g.edition==="draw" ? "Our exquisite corpse is finished. Unfold it:" : "Our exquisite corpse sentence is finished. Read it:";
 function sent(){
   const g=S.game, link=gameLink(g);
   return `<div class="fold-ill"><i></i><i></i></div>
   <div class="stack" style="gap:4px"><span class="lab">Folded · ${g.turns.length} of ${g.parts} parts done</span>
   <h2>Now send it to the next player</h2></div>
   <p>They will only see ${g.edition==="draw"?"the dots where your lines cross the fold":"your last word"}. Whoever adds the last part gets the reveal and can send it back to everyone.</p>
-  <div class="stack"><span class="lab">Game link</span>
-    <div class="linkbox" style="max-height:4.6em;overflow:hidden">${esc(link)}</div>
-    <div class="row"><button class="solid" onclick="shareLink(shareText(S.game),this)">Send to the next player</button>
-    <button onclick="copy(gameLink(S.game),this)">Copy link</button></div>
+  <div class="stack">
+    ${navigator.share?`<button class="solid wide" onclick="shareLink(shareText(S.game),this)">Share with the next player…</button><span class="lab">Or pick an app</span>`:`<span class="lab">Send it with</span>`}
+    ${shareGrid(shareMsg(g), link, "Your turn: exquisite corpse")}
   </div>
   <button class="ghost" onclick="location.hash='';go('home')">Back to start</button>`;
 }
@@ -591,7 +606,9 @@ function reveal(){
   <div class="stack">
     <button class="solid wide" onclick="saveImage(this)">Save image</button>
     ${g.edition==="words"?`<button class="wide" onclick="copy(wordsText(S.game),this)">Copy the sentence</button>`:""}
-    ${S.mode==="remote"?`<button class="wide" onclick="revealShare(this)">Send the reveal to everyone</button>`:""}
+    ${S.mode==="remote"?`<div class="stack"><span class="lab">Send the reveal to everyone</span>
+      ${navigator.share?`<button class="wide" onclick="revealShare(this)">Share…</button>`:""}
+      ${shareGrid(revealMsg(g), LINK, "Our exquisite corpse is finished")}</div>`:""}
     <button class="ghost wide" onclick="location.hash='';S.game=null;S.view3d=false;go('home')">${ex?"Make your own":"Play again"}</button>
   </div>`;
 }
@@ -663,7 +680,7 @@ async function saveImage(btn){
 
 async function revealShare(btn){
   const g=S.game; if(!LINK.includes("#p=")) await makeLink(g);
-  shareLink((g.edition==="draw"?"Our exquisite corpse is finished. Unfold it: ":"Our exquisite corpse sentence is finished. Unfold it: ")+LINK, btn);
+  shareLink(revealMsg(g)+" "+LINK, btn);
 }
 render();
 routeHash();
