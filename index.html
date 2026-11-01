@@ -70,7 +70,9 @@ textarea{font-family:var(--display);font-size:30px;line-height:1.15;resize:none;
 @keyframes fold{from{transform:perspective(400px) rotateX(0)}to{transform:perspective(400px) rotateX(-178deg)}}
 
 .reveal{display:flex;flex-direction:column;background:#fff;border:1px solid var(--line)}
-.reveal .sec{transform-origin:top;transform:perspective(900px) rotateX(-92deg);opacity:0;transition:transform .9s cubic-bezier(.2,.7,.2,1),opacity .4s}
+.reveal .sec{transform-origin:top;transform:perspective(900px) rotateX(-92deg);opacity:0;transition:transform .9s cubic-bezier(.2,.7,.2,1),opacity .5s}
+.reveal .wsec{transform:translateY(14px);transform-origin:top}
+.reveal .wsec.open{transform:none}
 .reveal .sec.open{transform:none;opacity:1}
 .reveal canvas{display:block;width:100%;height:auto;aspect-ratio:1000/700}
 .reveal .wsec{font-family:var(--display);font-size:clamp(30px, 9vw, 42px);line-height:1.05;padding:16px 20px;border-top:1px dashed var(--line)}
@@ -629,9 +631,7 @@ function reveal(){
   const ex=S.mode==="example";
   return `${ex?`<button class="ghost chip" style="align-self:flex-start;padding-left:0" onclick="go('home');setTimeout(()=>$('#wall-top')?.scrollIntoView(),50)">← Back to the wall</button>`:""}
   <div class="stack" style="gap:4px"><span class="lab">${ex?"Example":"Unfolded"}</span><h2>${ex&&g.edition==="draw"?esc(g.theme):"The reveal"}</h2></div>
-  <div class="seg"><button aria-pressed="${!S.view3d}" onclick="S.view3d=false;render()">Unfolded</button><button aria-pressed="${!!S.view3d}" onclick="S.view3d=true;render()">As an object</button></div>
-  ${S.view3d ? `<div class="obj" id="obj"><div class="rot" id="rot"></div></div><p class="hint">Drag to turn it. A first sketch of how it could become a printed object.</p>`
-    : `<div class="reveal" id="rv">${body}</div>`}
+  <div class="reveal" id="rv">${body}</div>
   <div class="credits" ${ex?"hidden":""}>${who.map((w,i)=>`<span>${esc(partNames(g)[i])} · ${esc(w)}</span>`).join("")}</div>
   <div class="stack">
     <button class="solid wide" onclick="saveImage(this)">Save image</button>
@@ -644,12 +644,24 @@ function reveal(){
 }
 after.reveal=()=>{
   const g=S.game;
-  if(S.view3d) return build3d();
-  document.querySelectorAll("#rv canvas").forEach(c=>{ const i=+c.dataset.i; sizeCanvas(c); paint(c.getContext("2d"), g.turns[i].strokes, {start:i===0?g.start:null, pencil:g.pencil}); });
-  const secs=[...document.querySelectorAll("#rv .sec")];
   const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
-  secs.forEach((s,i)=> reduce ? s.classList.add("open") : setTimeout(()=>s.classList.add("open"), 300+i*750));
+  const canv=[...document.querySelectorAll("#rv canvas")];
+  const draw=(c,t)=>{ const i=+c.dataset.i; paint(c.getContext("2d"), partial(g.turns[i].strokes,t), {start:i===0?g.start:null, pencil:g.pencil}); };
+  canv.forEach(c=>{ sizeCanvas(c); draw(c, reduce?1:0); });
+  const secs=[...document.querySelectorAll("#rv .sec")];
+  secs.forEach((s,i)=>{
+    if(reduce){ s.classList.add("open"); return; }
+    setTimeout(()=>{ s.classList.add("open"); const c=s.querySelector("canvas"); if(!c) return;
+      const t0=performance.now(), D=1100; const step=now=>{ if(!c.isConnected) return; const t=Math.min(1,(now-t0)/D); draw(c, 1-Math.pow(1-t,2)); if(t<1) requestAnimationFrame(step); }; requestAnimationFrame(step); }, 300+i*900);
+  });
+  const cr=document.querySelector(".credits"); if(cr && !reduce){ cr.style.opacity=0; cr.style.transition="opacity .8s"; setTimeout(()=>cr.style.opacity=1, 300+secs.length*900+400); }
 };
+// the first fraction t of all points, so lines draw themselves in the order they were made
+function partial(strokes,t){
+  if(t>=1) return strokes; const total=strokes.reduce((a,s)=>a+s.length,0); let left=Math.floor(total*t/2)*2; const out=[];
+  for(const s of strokes){ if(left<=0) break; out.push(s.length<=left?s:s.slice(0,Math.max(2,left))); left-=s.length; }
+  return out;
+}
 let spin=0;
 function build3d(){
   const g=S.game, rot=$("#rot"), COPIES=5, DEPTH=[0,-38,22,-26];
