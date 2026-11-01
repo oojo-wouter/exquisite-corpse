@@ -108,6 +108,19 @@ textarea{font-family:var(--display);font-size:30px;line-height:1.15;resize:none;
 .steps .end{grid-template-columns:1fr;color:var(--grey);font-size:13px}
 .sharegrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 a.btn{display:flex;align-items:center;justify-content:center;text-decoration:none;box-sizing:border-box;text-align:center;font-size:14px;padding:10px 8px}
+.loader{height:230px;display:flex;justify-content:center;align-items:flex-end;perspective:700px;padding-top:10px}
+.lb{position:relative;width:150px;height:62px;background:#fff;border:1.5px solid var(--ink);transform-style:preserve-3d;box-sizing:border-box}
+.lb .lb{position:absolute;left:-1.5px;bottom:calc(100% + 1.5px);transform-origin:bottom}
+.lb.b2{animation:f2 4.8s ease-in-out infinite}
+.lb.b1{animation:f1 4.8s ease-in-out infinite}
+.lb svg{position:absolute;inset:0;width:100%;height:100%;backface-visibility:hidden}
+.lb .back{position:absolute;inset:0;background:var(--wash);transform:rotateX(180deg);backface-visibility:hidden}
+@keyframes f1{0%,8%{transform:rotateX(0)}24%,76%{transform:rotateX(-179deg)}92%,100%{transform:rotateX(0)}}
+@keyframes f2{0%,26%{transform:rotateX(0)}42%,64%{transform:rotateX(-179deg)}80%,100%{transform:rotateX(0)}}
+.eye{animation:blink 2.4s infinite;transform-origin:center;transform-box:fill-box}
+@keyframes blink{0%,90%,100%{transform:scaleY(1)}95%{transform:scaleY(.1)}}
+.quip{font-family:var(--display);font-style:italic;font-size:26px;text-align:center;min-height:2.3em;transition:opacity .3s}
+@media (prefers-reduced-motion: reduce){.lb.b1,.lb.b2,.eye{animation:none}}
 .howto{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;counter-reset:st}
 .howto div{border-top:1.5px solid var(--ink);padding-top:8px;font-size:13px;line-height:1.35;min-width:0}
 .howto div::before{counter-increment:st;content:counter(st);display:block;font-family:var(--display);font-size:28px;line-height:1}
@@ -421,7 +434,7 @@ function shareGrid(msg, link, subject){
     <button style="font-size:14px;padding:10px 8px" onclick="copy(${esc(JSON.stringify(link))},this)">Copy link</button></div>`;
 }
 async function shareLink(text, btn){
-  if(navigator.share){ try{ await navigator.share({text}); return; }catch(e){ if(e?.name==="AbortError") return; } }
+  if(navigator.share){ try{ await navigator.share({text}); if(S.screen==="sent") go("waiting"); return; }catch(e){ if(e?.name==="AbortError") return; } }
   copy(text, btn);
 }
 
@@ -430,7 +443,7 @@ function go(screen){ S.screen=screen; render(); scrollTo(0,0); if(S.game) persis
 
 function render(){
   const app=$("#app");
-  const f = ({home,turn,handoff,reveal,sent,join,loading:()=>`<p class="muted">Unfolding the paper…</p>`,
+  const f = ({home,turn,handoff,reveal,sent,waiting,join,loading:()=>`<p class="muted">Unfolding the paper…</p>`,
     missing:()=>`<h2>This link doesn't open a game</h2><p class="muted">It may have been cut off when it was shared. Ask for the full link.</p><button class="solid" onclick="location.hash='';go('home')">Start a new one</button>`,
     noaccess:()=>`<h2>You've been asked to add a part</h2><p class="muted">Sign in to claude.ai to open shared games. Or start your own game on one phone.</p><button class="solid" onclick="location.hash='';go('home')">Start a game</button>`})[S.screen];
   app.innerHTML = f();
@@ -578,8 +591,25 @@ function sent(){
     ${navigator.share?`<button class="solid wide" onclick="shareLink(shareText(S.game),this)">Share with the next player…</button><span class="lab">Or pick an app</span>`:`<span class="lab">Send it with</span>`}
     ${shareGrid(shareMsg(g), link, "Your turn: exquisite corpse")}
   </div>
+  <button class="solid wide" onclick="go('waiting')">I've sent it</button>
   <button class="ghost" onclick="location.hash='';go('home')">Back to start</button>`;
 }
+
+// ---------- waiting screen: a paper that folds itself while the others play ----------
+const QUIPS=["Folding the paper…","Someone is drawing a nose. Probably.","No peeking.","Sharpening the pencil…","Breton would be proud.","The corpse is getting exquisite…","Hiding your part under the fold…","Waiting for the next genius…"];
+function waiting(){
+  const g=S.game, left=g.parts-g.turns.length;
+  const band=(d,eye)=>`<svg viewBox="0 0 150 62" aria-hidden="true"><path d="${d}" fill="none" stroke="#111" stroke-width="2" stroke-linecap="round"/>${eye?`<ellipse class="eye" cx="75" cy="30" rx="9" ry="6" fill="none" stroke="#111" stroke-width="2"/><circle class="eye" cx="77" cy="30" r="2.4" fill="#111"/>`:""}</svg>`;
+  return `<div class="loader" aria-hidden="true"><div class="lb">${band("M55 0 C60 20 50 40 62 62 M95 0 C90 25 100 45 88 62")}
+      <div class="lb b2"><div class="back"></div>${band("M50 62 C40 40 60 25 70 15 C80 25 100 40 100 62 M45 40 L25 30 M105 40 L125 28")}
+        <div class="lb b1"><div class="back"></div>${band("M45 62 C30 30 50 6 75 6 C100 6 120 30 105 62",true)}</div></div></div></div>
+  <p class="quip" id="quip">${QUIPS[0]}</p>
+  <div class="stack" style="gap:6px;text-align:center"><span class="lab">${left} more ${left===1?"player":"players"} to go</span>
+  <p class="muted">The last player gets the reveal. Ask them to send it back to you.</p></div>
+  <button class="ghost" onclick="location.hash='';go('home')">Start a new game while you wait</button>`;
+}
+let quipT=null;
+after.waiting=()=>{ clearInterval(quipT); let i=0; quipT=setInterval(()=>{ const q=$("#quip"); if(!q){ clearInterval(quipT); return; } q.style.opacity=0; setTimeout(()=>{ i=(i+1)%QUIPS.length; q.textContent=QUIPS[i]; q.style.opacity=1; },300); },2600); };
 
 function join(){
   const g=S.game, n=g.turns.length, names=partNames(g);
