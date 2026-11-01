@@ -336,10 +336,10 @@ function closeCheat(){ $("#cheat")?.remove(); document.body.style.overflow=""; c
 addEventListener("keydown",e=>{ if(e.key==="Escape" && $("#cheat")) closeCheat(); });
 
 // ---------- shared database (Supabase). Left empty: links carry the whole game and the wall stays empty ----------
-const SB = { url:"", key:"" };
+const SB = { url:"https://cxmxqowmlbxchnnlhyrf.supabase.co", key:"sb_publishable_xweKj0h96mmGl-g6kCm3IQ_tXn8_Zyh" };
 const hasDB = () => !!(SB.url && SB.key);
 async function api(path, opts={}){
-  const r=await fetch(SB.url.replace(/\/$/,"")+"/rest/v1/"+path,{...opts,headers:{apikey:SB.key,Authorization:"Bearer "+SB.key,"Content-Type":"application/json",Prefer:"return=minimal",...(opts.headers||{})}});
+  const r=await fetch(SB.url.replace(/\/$/,"")+"/rest/v1/"+path,{...opts,headers:{apikey:SB.key,...(SB.key.startsWith("sb_")?{}:{Authorization:"Bearer "+SB.key}),"Content-Type":"application/json",Prefer:"return=minimal",...(opts.headers||{})}});
   if(!r.ok){ const e=new Error("db "+r.status); e.status=r.status; throw e; }
   const txt=await r.text(); return txt?JSON.parse(txt):null;
 }
