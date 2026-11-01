@@ -10,16 +10,20 @@
 <style>
 /* Layout: one narrow paper column, like a folded sheet; everything black on off-white. Deliberately single-theme (paper). */
 :root{
-  --paper:#f5f5f2; --ink:#111111; --grey:#8a8a86; --line:#d9d9d4; --wash:#ebebe7;
+  --paper:#f5f5f2; --ink:#111111; --grey:#8a8a86; --line:#d9d9d4; --wash:#ebebe7; --card:#ffffff; --guide:#c8c8c3;
   --display:"Instrument Serif", "Times New Roman", serif;
   --ui:"Geist", system-ui, -apple-system, "Segoe UI", sans-serif;
   --mono:"Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
 }
+:root[data-theme="dark"]{--paper:#0f0f0f; --ink:#f2f2ee; --grey:#8d8d88; --line:#2e2e2c; --wash:#1f1f1e; --card:#171717; --guide:#3d3d3a; color-scheme:dark}
+.mode{position:fixed;z-index:25;top:calc(10px + env(safe-area-inset-top, 0px));right:max(12px, env(safe-area-inset-right, 0px));
+  width:40px;height:40px;min-height:40px;padding:0;border-radius:50%;border:1.5px solid var(--ink);background:var(--paper);display:grid;place-items:center}
+.mode i{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--ink);background:linear-gradient(90deg,var(--ink) 50%,transparent 50%)}
 html,body{height:100%}
 body{background:var(--paper);color:var(--ink);font-family:var(--ui);font-size:15px;line-height:1.45;
   padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));
   -webkit-tap-highlight-color:transparent}
-.wrap{max-width:520px;margin:0 auto;padding-block:20px 40px;display:flex;flex-direction:column;gap:20px}
+.wrap{max-width:520px;margin:0 auto;padding-block:58px 40px;display:flex;flex-direction:column;gap:20px}
 h1,h2{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance;line-height:1.02}
 h1{font-size:clamp(44px, 13vw, 64px);letter-spacing:-.01em}
 h2{font-size:34px}
@@ -50,26 +54,26 @@ input[type=text],textarea{font:inherit;width:100%;box-sizing:border-box;backgrou
   padding:8px 0;color:var(--ink);border-radius:0}
 textarea{font-family:var(--display);font-size:30px;line-height:1.15;resize:none;min-height:80px}
 
-.sheet{position:relative;background:#fff;border:1px solid var(--line);touch-action:none;user-select:none;-webkit-user-select:none}
+.sheet{position:relative;background:var(--card);border:1px solid var(--line);touch-action:none;user-select:none;-webkit-user-select:none}
 .sheet canvas{display:block;width:100%;height:auto;aspect-ratio:1000/700}
 .tools{display:flex;justify-content:space-between;align-items:center;gap:8px}
 .foldnote{font-family:var(--mono);font-size:11px;letter-spacing:.08em;color:var(--grey);text-transform:uppercase}
 .wordfold{font-family:var(--display);font-size:22px;border-top:1.5px dashed var(--grey);padding-top:10px;color:var(--grey)}
 .wordfold b{color:var(--ink);font-weight:400;font-style:italic}
 
-.card{border:1.5px solid var(--ink);padding:20px;display:flex;flex-direction:column;gap:14px;background:#fff}
+.card{border:1.5px solid var(--ink);padding:20px;display:flex;flex-direction:column;gap:14px;background:var(--card)}
 .quote{font-family:var(--display);font-size:30px;line-height:1.08}
 .quote span{display:block}
 .quote span+span{border-top:1px dashed var(--line);padding-top:4px;margin-top:4px}
 
 .handoff{min-height:70vh;display:flex;flex-direction:column;justify-content:center;gap:22px}
 .fold-ill{height:90px;position:relative}
-.fold-ill i{position:absolute;left:0;right:0;height:44px;border:1.5px solid var(--ink);background:#fff}
+.fold-ill i{position:absolute;left:0;right:0;height:44px;border:1.5px solid var(--ink);background:var(--card)}
 .fold-ill i:first-child{top:0;transform-origin:bottom;animation:fold 1.6s ease-in-out infinite alternate}
 .fold-ill i:last-child{top:46px}
 @keyframes fold{from{transform:perspective(400px) rotateX(0)}to{transform:perspective(400px) rotateX(-178deg)}}
 
-.reveal{display:flex;flex-direction:column;background:#fff;border:1px solid var(--line)}
+.reveal{display:flex;flex-direction:column;background:var(--card);border:1px solid var(--line)}
 .reveal .sec{transform-origin:top;transform:perspective(900px) rotateX(-92deg);opacity:0;transition:transform .9s cubic-bezier(.2,.7,.2,1),opacity .5s}
 .reveal .wsec{transform:translateY(14px);transform-origin:top}
 .reveal .wsec.open{transform:none}
@@ -85,7 +89,7 @@ textarea{font-family:var(--display);font-size:30px;line-height:1.15;resize:none;
 .progress i{flex:1;height:3px;background:var(--line)}
 .progress i.on{background:var(--ink)}
 .wall{columns:2;column-gap:12px}
-.wall>button{all:unset;box-sizing:border-box;display:block;width:100%;break-inside:avoid;margin-bottom:12px;background:#fff;border:1px solid var(--line);cursor:pointer;transition:border-color .15s}
+.wall>button{all:unset;box-sizing:border-box;display:block;width:100%;break-inside:avoid;margin-bottom:12px;background:var(--card);border:1px solid var(--line);cursor:pointer;transition:border-color .15s}
 .wall>button:hover,.wall>button:focus-visible{border-color:var(--ink)}
 .wall>button:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
 .wall canvas{display:block;width:100%;height:auto;aspect-ratio:1000/700}
@@ -102,7 +106,7 @@ textarea{font-family:var(--display);font-size:30px;line-height:1.15;resize:none;
 .art .by{font-size:14px}
 .art .md{font-size:13px;color:var(--grey)}
 .art a{color:var(--ink);font-weight:500;font-size:14px;text-underline-offset:3px}
-.steps{display:flex;flex-direction:column;background:#fff;border:1px solid var(--line)}
+.steps{display:flex;flex-direction:column;background:var(--card);border:1px solid var(--line)}
 .steps div{display:grid;grid-template-columns:34px 1fr;gap:10px;align-items:baseline;padding:10px 14px;font-size:14px;line-height:1.35}
 .steps div+div{border-top:1.5px dashed var(--line)}
 .steps b{font-family:var(--display);font-weight:400;font-size:24px;line-height:1}
@@ -111,11 +115,11 @@ textarea{font-family:var(--display);font-size:30px;line-height:1.15;resize:none;
 .sharegrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 a.btn{display:flex;align-items:center;justify-content:center;text-decoration:none;box-sizing:border-box;text-align:center;font-size:14px;padding:10px 8px}
 .loader{height:230px;display:flex;justify-content:center;align-items:flex-end;perspective:700px;padding-top:10px}
-.lb{position:relative;width:150px;height:62px;background:#fff;border:1.5px solid var(--ink);transform-style:preserve-3d;box-sizing:border-box}
+.lb{position:relative;width:150px;height:62px;background:var(--card);border:1.5px solid var(--ink);transform-style:preserve-3d;box-sizing:border-box}
 .lb .lb{position:absolute;left:-1.5px;bottom:calc(100% + 1.5px);transform-origin:bottom}
 .lb.b2{animation:f2 4.8s ease-in-out infinite}
 .lb.b1{animation:f1 4.8s ease-in-out infinite}
-.lb svg{position:absolute;inset:0;width:100%;height:100%;backface-visibility:hidden}
+.lb svg{color:var(--ink);position:absolute;inset:0;width:100%;height:100%;backface-visibility:hidden}
 .lb .back{position:absolute;inset:0;background:var(--wash);transform:rotateX(180deg);backface-visibility:hidden}
 @keyframes f1{0%,8%{transform:rotateX(0)}24%,76%{transform:rotateX(-179deg)}92%,100%{transform:rotateX(0)}}
 @keyframes f2{0%,26%{transform:rotateX(0)}42%,64%{transform:rotateX(-179deg)}80%,100%{transform:rotateX(0)}}
@@ -128,13 +132,13 @@ a.btn{display:flex;align-items:center;justify-content:center;text-decoration:non
 .howto div::before{counter-increment:st;content:counter(st);display:block;font-family:var(--display);font-size:28px;line-height:1}
 .topbar{display:flex;justify-content:space-between;align-items:center;gap:8px}
 button.warn{background:var(--ink);color:var(--paper)}
-.obj{background:#fff;border:1px solid var(--line);perspective:1100px;display:flex;justify-content:center;padding-block:36px;overflow:hidden;touch-action:pan-y;cursor:grab}
+.obj{background:var(--card);border:1px solid var(--line);perspective:1100px;display:flex;justify-content:center;padding-block:36px;overflow:hidden;touch-action:pan-y;cursor:grab}
 .rot{width:56%;display:flex;flex-direction:column;transform-style:preserve-3d}
 .pb{position:relative;transform-style:preserve-3d}
 .pb canvas{display:block;width:100%;height:auto;aspect-ratio:1000/700}
 .pb .cp{position:absolute;inset:0}
 .pb .wt{font-family:var(--display);font-size:clamp(22px,6.5vw,30px);line-height:1.05;padding:6px 0;color:var(--ink)}
-.pb .wt.cp{color:#9a9a95}
+.pb .wt.cp{color:var(--grey)}
 .hint{font-size:13px;color:var(--grey);text-align:center}
 @media (prefers-reduced-motion: reduce){
   .reveal .sec{transition:none}
@@ -143,6 +147,7 @@ button.warn{background:var(--ink);color:var(--paper)}
 </style>
 
 </head><body>
+<button class="mode" id="mode" onclick="toggleTheme()" aria-label="Switch to dark mode"><i></i></button>
 <div class="wrap" id="app"></div>
 <div class="toast" id="toast" hidden></div>
 
@@ -245,23 +250,25 @@ function foldDots(strokes){
 const partNames = g => (g.edition==="draw"?DRAW_PARTS:WORD_PARTS)[g.parts];
 
 // ---------- drawing ----------
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 function paint(ctx, strokes, opts={}){
+  const BG=opts.light?"#ffffff":css("--card"), INK=opts.light?"#111111":css("--ink"), GUIDE=opts.light?"#c8c8c3":css("--guide"), MUTE=opts.light?"#9a9a95":css("--grey");
   const c=ctx.canvas, k=c.width/W;
-  ctx.setTransform(1,0,0,1,0,0); if(opts.clear) ctx.clearRect(0,0,c.width,c.height); else { ctx.fillStyle="#fff"; ctx.fillRect(0,0,c.width,c.height); }
+  ctx.setTransform(1,0,0,1,0,0); if(opts.clear) ctx.clearRect(0,0,c.width,c.height); else { ctx.fillStyle=BG; ctx.fillRect(0,0,c.width,c.height); }
   ctx.setTransform(k,0,0,k,0,0);
   if(opts.guides){
-    ctx.strokeStyle="#c8c8c3"; ctx.lineWidth=2; ctx.setLineDash([10,10]);
+    ctx.strokeStyle=GUIDE; ctx.lineWidth=2; ctx.setLineDash([10,10]);
     if(!opts.last){ ctx.beginPath(); ctx.moveTo(0,FOLD); ctx.lineTo(W,FOLD); ctx.stroke();
-      ctx.setLineDash([]); ctx.fillStyle="#9a9a95"; ctx.font="500 20px Geist Mono, monospace"; ctx.fillText("FOLD · CARRY YOUR LINES DOWN HERE", 20, FOLD+40); }
+      ctx.setLineDash([]); ctx.fillStyle=MUTE; ctx.font="500 20px Geist Mono, monospace"; ctx.fillText("FOLD · CARRY YOUR LINES DOWN HERE", 20, FOLD+40); }
     ctx.setLineDash([]);
   }
-  if(opts.dots){ ctx.fillStyle="#111"; for(const d of opts.dots){ ctx.beginPath(); ctx.arc(d.x,10,11,0,7); ctx.fill(); } }
-  if(opts.start){ ctx.fillStyle="#111"; for(const p of opts.start){ ctx.beginPath(); ctx.arc(p[0],p[1],7,0,7); ctx.fill(); } }
+  if(opts.dots){ ctx.fillStyle=INK; for(const d of opts.dots){ ctx.beginPath(); ctx.arc(d.x,10,11,0,7); ctx.fill(); } }
+  if(opts.start){ ctx.fillStyle=INK; for(const p of opts.start){ ctx.beginPath(); ctx.arc(p[0],p[1],7,0,7); ctx.fill(); } }
   if(opts.pencil) return pencil(ctx, strokes);
-  ctx.strokeStyle="#111"; ctx.lineWidth=LW; ctx.lineCap="round"; ctx.lineJoin="round";
+  ctx.strokeStyle=INK; ctx.lineWidth=LW; ctx.lineCap="round"; ctx.lineJoin="round";
   for(const s of strokes){
     ctx.beginPath();
-    if(s.length<=2){ ctx.arc(s[0],s[1],LW/2,0,7); ctx.fillStyle="#111"; ctx.fill(); continue; }
+    if(s.length<=2){ ctx.arc(s[0],s[1],LW/2,0,7); ctx.fillStyle=INK; ctx.fill(); continue; }
     ctx.moveTo(s[0],s[1]);
     for(let i=2;i<s.length-2;i+=2){ const mx=(s[i]+s[i+2])/2, my=(s[i+1]+s[i+3])/2; ctx.quadraticCurveTo(s[i],s[i+1],mx,my); }
     ctx.lineTo(s[s.length-2],s[s.length-1]); ctx.stroke();
@@ -607,7 +614,7 @@ function sent(){
 const QUIPS=["Folding the paper…","Someone is drawing a nose. Probably.","No peeking.","Sharpening the pencil…","Breton would be proud.","The corpse is getting exquisite…","Hiding your part under the fold…","Waiting for the next genius…"];
 function waiting(){
   const g=S.game, left=g.parts-g.turns.length;
-  const band=(d,eye)=>`<svg viewBox="0 0 150 62" aria-hidden="true"><path d="${d}" fill="none" stroke="#111" stroke-width="2" stroke-linecap="round"/>${eye?`<ellipse class="eye" cx="75" cy="30" rx="9" ry="6" fill="none" stroke="#111" stroke-width="2"/><circle class="eye" cx="77" cy="30" r="2.4" fill="#111"/>`:""}</svg>`;
+  const band=(d,eye)=>`<svg viewBox="0 0 150 62" aria-hidden="true"><path d="${d}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>${eye?`<ellipse class="eye" cx="75" cy="30" rx="9" ry="6" fill="none" stroke="currentColor" stroke-width="2"/><circle class="eye" cx="77" cy="30" r="2.4" fill="currentColor"/>`:""}</svg>`;
   return `<div class="loader" aria-hidden="true"><div class="lb">${band("M55 0 C60 20 50 40 62 62 M95 0 C90 25 100 45 88 62")}
       <div class="lb b2"><div class="back"></div>${band("M50 62 C40 40 60 25 70 15 C80 25 100 40 100 62 M45 40 L25 30 M105 40 L125 28")}
         <div class="lb b1"><div class="back"></div>${band("M45 62 C30 30 50 6 75 6 C100 6 120 30 105 62",true)}</div></div></div></div>
@@ -727,7 +734,7 @@ async function composeImage(){
   if(g.edition==="draw"){
     c.width=W+M*2; c.height=H*g.parts+M*2+60;
     x.fillStyle="#f5f5f2"; x.fillRect(0,0,c.width,c.height);
-    g.turns.forEach((t,i)=>{ const sc=document.createElement("canvas"); sc.width=W; sc.height=H; paint(sc.getContext("2d"), t.strokes, {start:i===0?g.start:null, pencil:g.pencil}); x.drawImage(sc,M,M+i*H); });
+    g.turns.forEach((t,i)=>{ const sc=document.createElement("canvas"); sc.width=W; sc.height=H; paint(sc.getContext("2d"), t.strokes, {start:i===0?g.start:null, pencil:g.pencil, light:true}); x.drawImage(sc,M,M+i*H); });
   }else{
     c.width=1140; const lines=[]; x.font="68px 'Instrument Serif', serif";
     g.turns.forEach(t=>{ let line=""; for(const w of t.text.split(/\s+/)){ const tr=(line+" "+w).trim(); if(x.measureText(tr).width>c.width-M*2 && line){ lines.push(line); line=w; } else line=tr; } lines.push(line); lines.push(""); });
@@ -754,6 +761,12 @@ async function revealShare(btn){
   const g=S.game; if(!LINK) await makeLink(g);
   shareLink(revealMsg(g)+" "+LINK, btn);
 }
+function applyTheme(t){ document.documentElement.dataset.theme=t; const b=$("#mode"); if(b) b.setAttribute("aria-label", t==="dark"?"Switch to light mode":"Switch to dark mode");
+  document.querySelector('meta[name="theme-color"]')?.setAttribute("content", t==="dark"?"#0f0f0f":"#f5f5f2"); }
+function toggleTheme(){ const t=document.documentElement.dataset.theme==="dark"?"light":"dark"; store.set("ec-theme",t); applyTheme(t);
+  if(S.screen==="turn") pad?.redraw();
+  if(S.screen==="home") loadWall(); if(S.screen==="reveal") render(); }
+applyTheme(store.get("ec-theme") || (matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"));
 render();
 routeHash();
 </script>
