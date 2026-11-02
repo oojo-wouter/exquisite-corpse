@@ -2,20 +2,20 @@
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="description" content="Exquisite corpse: draw or write one part, fold, pass it on, unfold the whole thing together.">
 <meta property="og:title" content="Exquisite corpse"><meta property="og:description" content="Someone folded this paper for you. Add your part without seeing the rest.">
-<meta name="theme-color" content="#f5f5f2">
+<meta name="theme-color" content="#f4f6fb">
 <style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}[hidden]{display:none!important}img{max-width:100%}</style>
 <title>Exquisite Corpse</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
 <style>
-/* Layout: one narrow paper column, like a folded sheet; everything black on off-white. Deliberately single-theme (paper). */
+/* Layout: one narrow paper column, like a folded sheet; everything in cobalt blue: cobalt on light paper, or light on cobalt in dark mode. */
 :root{
-  --paper:#f5f5f2; --ink:#111111; --grey:#8a8a86; --line:#d9d9d4; --wash:#ebebe7; --card:#ffffff; --guide:#c8c8c3;
+  --paper:#f4f6fb; --ink:#0047ab; --grey:#6f83b3; --line:#cdd7ec; --wash:#e4eaf6; --card:#ffffff; --guide:#b4c3e4;
   --display:"Instrument Serif", "Times New Roman", serif;
   --ui:"Geist", system-ui, -apple-system, "Segoe UI", sans-serif;
   --mono:"Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
 }
-:root[data-theme="dark"]{--paper:#0f0f0f; --ink:#f2f2ee; --grey:#8d8d88; --line:#2e2e2c; --wash:#1f1f1e; --card:#171717; --guide:#3d3d3a; color-scheme:dark}
+:root[data-theme="dark"]{--paper:#0047ab; --ink:#f4f6fb; --grey:#a9bfec; --line:#3a6fc4; --wash:#0d55be; --card:#003c92; --guide:#4f7fcf; color-scheme:dark}
 .mode{position:fixed;z-index:25;top:calc(10px + env(safe-area-inset-top, 0px));right:max(12px, env(safe-area-inset-right, 0px));
   width:40px;height:40px;min-height:40px;padding:0;border-radius:50%;border:1.5px solid var(--ink);background:var(--paper);display:grid;place-items:center}
 .mode i{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--ink);background:linear-gradient(90deg,var(--ink) 50%,transparent 50%)}
@@ -111,7 +111,7 @@ textarea{font-family:var(--display);font-size:30px;line-height:1.15;resize:none;
 .aihead{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--grey)}
 #aican{display:block;width:100%;aspect-ratio:1;background:var(--card);border:1px solid var(--line)}
 .aicap{font-size:12px;margin:0}
-.sheetbg{position:fixed;inset:0;background:rgba(17,17,17,.45);z-index:30;display:flex;align-items:flex-end;justify-content:center}
+.sheetbg{position:fixed;inset:0;background:rgba(0,30,80,.5);z-index:30;display:flex;align-items:flex-end;justify-content:center}
 .cheat{background:var(--paper);width:100%;max-width:560px;max-height:86vh;overflow:auto;border-top:1.5px solid var(--ink);box-sizing:border-box;
   padding:20px max(16px, env(safe-area-inset-right, 0px)) calc(24px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));display:flex;flex-direction:column;gap:16px;animation:up .25s ease-out}
 @keyframes up{from{transform:translateY(30px);opacity:0}}
@@ -226,7 +226,7 @@ const rnd = n => Math.floor(Math.random()*n);
 const pick = (arr,n) => { const a=[...arr]; for(let i=a.length-1;i>0;i--){const j=rnd(i+1);[a[i],a[j]]=[a[j],a[i]];} return a.slice(0,n); };
 const esc = s => String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 // stroke style code = width*10 + colour (10 = medium, ink). Stored as "12:x,y,x,y" when not the default.
-const PEN_W=[4,9,18], PEN_C=["ink","#e63946","#ff8c1a","#f2c400","#2a9d8f","#2f6fde","#9b5de5"];
+const PEN_W=[4,9,18], PEN_C=["ink","#e63946","#ff8c1a","#f2c400","#2a9d8f","#111111","#9b5de5"];
 const enc = (strokes,st) => strokes.map((s,i)=>(st&&st[i]!=null&&st[i]!==10?st[i]+":":"")+s.map(Math.round).join(",")).join("|");
 function decS(str){ const strokes=[], st=[]; if(str) for(const part of str.split("|")){ const k=part.indexOf(":"); st.push(k>0?+part.slice(0,k):10); strokes.push((k>0?part.slice(k+1):part).split(",").map(Number)); } return {strokes,st}; }
 const dec = str => decS(str).strokes;
@@ -280,7 +280,7 @@ const partNames = g => (g.edition==="draw"?DRAW_PARTS:WORD_PARTS)[g.parts];
 // ---------- drawing ----------
 const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 function paint(ctx, strokes, opts={}){
-  const BG=opts.light?"#ffffff":css("--card"), INK=opts.light?"#111111":css("--ink"), GUIDE=opts.light?"#c8c8c3":css("--guide"), MUTE=opts.light?"#9a9a95":css("--grey");
+  const BG=opts.light?"#ffffff":css("--card"), INK=opts.light?"#0047ab":css("--ink"), GUIDE=opts.light?"#b4c3e4":css("--guide"), MUTE=opts.light?"#6f83b3":css("--grey");
   const c=ctx.canvas, k=c.width/W;
   ctx.setTransform(1,0,0,1,0,0); if(opts.clear) ctx.clearRect(0,0,c.width,c.height); else { ctx.fillStyle=BG; ctx.fillRect(0,0,c.width,c.height); }
   ctx.setTransform(k,0,0,k,0,0);
@@ -325,7 +325,7 @@ const penCode=()=>PEN.w*10+PEN.c;
 function setPen(k,v){ PEN[k]=v; store.set("ec-pen-"+k,String(v)); document.querySelectorAll(`[data-pen-${k}]`).forEach(b=>b.setAttribute("aria-pressed",+b.dataset["pen"+k.toUpperCase()]===v)); }
 function penBar(){
   const sizes=["Fine","Medium","Thick"].map((n,i)=>`<button class="pen" data-pen-w="${i}" aria-pressed="${PEN.w===i}" aria-label="${n} line" title="${n}" onclick="setPen('w',${i})"><i style="width:${[5,9,15][i]}px;height:${[5,9,15][i]}px"></i></button>`).join("");
-  const cols=PEN_C.map((c,i)=>`<button class="pen sw" data-pen-c="${i}" aria-pressed="${PEN.c===i}" aria-label="${i?"Colour "+c:"Black"}" onclick="setPen('c',${i})"><i style="background:${c==="ink"?"var(--ink)":c}"></i></button>`).join("");
+  const cols=PEN_C.map((c,i)=>`<button class="pen sw" data-pen-c="${i}" aria-pressed="${PEN.c===i}" aria-label="${i?(c==="#111111"?"Black":"Colour "+c):"Cobalt"}" onclick="setPen('c',${i})"><i style="background:${c==="ink"?"var(--ink)":c}"></i></button>`).join("");
   return `<div class="pens"><div class="row" style="gap:2px">${sizes}</div><span class="pensep"></span><div class="row" style="gap:2px">${cols}</div></div>`;
 }
 function sizeCanvas(c){ const r=c.getBoundingClientRect(), d=Math.min(window.devicePixelRatio||1,3); c.width=Math.round(r.width*d); c.height=Math.round(r.width*d*H/W); }
@@ -824,16 +824,16 @@ async function composeImage(){
   const c=document.createElement("canvas"); const x=c.getContext("2d");
   if(g.edition==="draw"){
     c.width=W+M*2; c.height=H*g.parts+M*2+60;
-    x.fillStyle="#f5f5f2"; x.fillRect(0,0,c.width,c.height);
+    x.fillStyle="#f4f6fb"; x.fillRect(0,0,c.width,c.height);
     g.turns.forEach((t,i)=>{ const sc=document.createElement("canvas"); sc.width=W; sc.height=H; paint(sc.getContext("2d"), t.strokes, {st:t.st, start:i===0?g.start:null, pencil:g.pencil, light:true}); x.drawImage(sc,M,M+i*H); });
   }else{
     c.width=1140; const lines=[]; x.font="68px 'Instrument Serif', serif";
     g.turns.forEach(t=>{ let line=""; for(const w of t.text.split(/\s+/)){ const tr=(line+" "+w).trim(); if(x.measureText(tr).width>c.width-M*2 && line){ lines.push(line); line=w; } else line=tr; } lines.push(line); lines.push(""); });
     lines.pop(); c.height=M*2+lines.length*80+80;
-    x.fillStyle="#f5f5f2"; x.fillRect(0,0,c.width,c.height); x.fillStyle="#111"; x.font="68px 'Instrument Serif', serif";
+    x.fillStyle="#f4f6fb"; x.fillRect(0,0,c.width,c.height); x.fillStyle="#0047ab"; x.font="68px 'Instrument Serif', serif";
     lines.forEach((l,i)=>x.fillText(l,M,M+60+i*80));
   }
-  x.fillStyle="#8a8a86"; x.font="500 20px 'Geist Mono', monospace";
+  x.fillStyle="#6f83b3"; x.font="500 20px 'Geist Mono', monospace";
   x.fillText(("EXQUISITE CORPSE · "+(g.edition==="draw"&&g.tags?g.theme+" · ":"")+names.join(", ")).toUpperCase(), M, c.height-M+10);
   return new Promise(r=>c.toBlob(r,"image/png"));
 }
@@ -853,7 +853,7 @@ async function revealShare(btn){
   shareLink(revealMsg(g)+" "+LINK, btn);
 }
 function applyTheme(t){ document.documentElement.dataset.theme=t; const b=$("#mode"); if(b) b.setAttribute("aria-label", t==="dark"?"Switch to light mode":"Switch to dark mode");
-  document.querySelector('meta[name="theme-color"]')?.setAttribute("content", t==="dark"?"#0f0f0f":"#f5f5f2"); }
+  document.querySelector('meta[name="theme-color"]')?.setAttribute("content", t==="dark"?"#0047ab":"#f4f6fb"); }
 function toggleTheme(){ const t=document.documentElement.dataset.theme==="dark"?"light":"dark"; store.set("ec-theme",t); applyTheme(t);
   if(S.screen==="turn") pad?.redraw();
   if(S.screen==="home") loadWall(); if(S.screen==="reveal") render(); }
