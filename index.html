@@ -207,13 +207,17 @@ const THEMES = {
   }
 };
 const DRAW_PARTS = {3:["Head","Body","Legs"],4:["Head","Torso","Legs","Feet"]};
-const WORD_PARTS = {3:["Who","Does what","To whom"],4:["Who","Does what","To whom","Where"]};
-const WORD_HELP = [
-  ["Who or what? An adjective and a noun.","The glass horse"],
-  ["What does it do? A verb.","swallows"],
-  ["To whom or what? An adjective and a noun.","a sleeping lighthouse"],
-  ["Where or when?","under the kitchen sea"]
-];
+const WORD_PARTS = {3:["Who","Does what","Where"],4:["Who","Does what","To whom","Where"]};
+// help line and example per part; 3 parts is the current game, 4 keeps older links working
+const WORD_HELP = {
+  3:[["Who or what? An adjective and a noun.","The glass horse"],
+     ["What does it do? A verb, and to whom or what if you like.","swallows a sleeping lighthouse"],
+     ["Where or when?","under the kitchen sea"]],
+  4:[["Who or what? An adjective and a noun.","The glass horse"],
+     ["What does it do? A verb.","swallows"],
+     ["To whom or what? An adjective and a noun.","a sleeping lighthouse"],
+     ["Where or when?","under the kitchen sea"]]
+};
 const W = 1000, H = 700, FOLD = 630, LW = 9;
 
 // ---------- small helpers ----------
@@ -256,7 +260,7 @@ function resumeBtn(){ const sv=savedGame(); if(!sv) return "";
 function resume(){ const sv=savedGame(); if(!sv) return; S.mode="local"; S.game=sv.g; S.draft=sv.d; go(sv.screen==="turn"?"turn":"handoff"); }
 function quitGame(){ if(S.mode==="local") store.set("ec-game",""); S.game=null; S.draft=null; location.hash=""; go("home"); }
 function newGame(){
-  return { id: Math.random().toString(36).slice(2,8), edition:S.edition, theme:S.theme, parts:S.edition==="draw"?3:4,
+  return { id: Math.random().toString(36).slice(2,8), edition:S.edition, theme:S.theme, parts:3,
     start: S.edition==="draw" ? starterDots() : [], turns:[] };
 }
 function starterDots(){
@@ -565,9 +569,8 @@ function home(){
       <div class="end">Then unfold it and see the whole creature for the first time.</div>
     </div>` : `<div class="steps" aria-label="How to play Words">
       <div><b>1</b><span><strong>Who?</strong> <i>The glass horse</i></span></div>
-      <div><b>2</b><span><strong>Does what?</strong> <i>swallows</i></span></div>
-      <div><b>3</b><span><strong>To whom?</strong> <i>a sleeping lighthouse</i></span></div>
-      <div><b>4</b><span><strong>Where?</strong> <i>under the kitchen sea</i></span></div>
+      <div><b>2</b><span><strong>Does what?</strong> <i>swallows a sleeping lighthouse</i></span></div>
+      <div><b>3</b><span><strong>Where?</strong> <i>under the kitchen sea</i></span></div>
       <div class="end">One player per line. You only see the last word before yours. Then read the whole sentence out loud.</div>
     </div>`}
   </div>
@@ -615,9 +618,9 @@ function turn(){
   const prev=n>0? g.turns[n-1].text.trim().split(/\s+/).pop() : "";
   return `${prog}
     <div class="stack" style="gap:4px"><span class="lab">Part ${n+1} of ${g.parts}</span><h2>${WORD_PARTS[g.parts][n]}</h2></div>
-    <p>${WORD_HELP[n][0]}</p>
+    <p>${(WORD_HELP[g.parts]||WORD_HELP[3])[n][0]}</p>
     ${n>0?`<div class="wordfold">…<b>${esc(prev)}</b></div>`:""}
-    <textarea id="txt" maxlength="70" rows="2" placeholder="${esc(WORD_HELP[n][1])}" oninput="S.draft.text=this.value;persist();$('#done').disabled=!this.value.trim()">${esc(d.text)}</textarea>
+    <textarea id="txt" maxlength="70" rows="2" placeholder="${esc((WORD_HELP[g.parts]||WORD_HELP[3])[n][1])}" oninput="S.draft.text=this.value;persist();$('#done').disabled=!this.value.trim()">${esc(d.text)}</textarea>
     ${sign}
     <button class="solid wide" id="done" ${d.text.trim()?"":"disabled"} onclick="finishTurn()">${last?"Finish and reveal":"Fold and pass on"}</button>`;
 }

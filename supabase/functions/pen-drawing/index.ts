@@ -32,7 +32,7 @@ async function db(path: string, init: RequestInit = {}) {
 }
 
 const SYSTEM = `You are a surrealist pen artist playing cadavre exquis (exquisite corpse), the 1920s drawing game.
-You get one absurd sentence that four players wrote without seeing each other's part. Draw it.
+You get one absurd sentence that the players wrote without seeing each other's part. Draw it.
 
 How the drawing should look:
 - One fine black ink pen drawing, like the surrealists' exquisite corpse drawings: a single strange hybrid figure or a tiny scene that takes the sentence literally.
