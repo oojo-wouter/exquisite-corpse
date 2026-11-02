@@ -18,6 +18,7 @@
 :root[data-theme="dark"]{--paper:#0047ab; --ink:#f4f6fb; --grey:#a9bfec; --line:#3a6fc4; --wash:#0d55be; --card:#003c92; --guide:#4f7fcf; color-scheme:dark}
 .mode{position:fixed;z-index:25;top:calc(10px + env(safe-area-inset-top, 0px));right:max(12px, env(safe-area-inset-right, 0px));
   width:40px;height:40px;min-height:40px;padding:0;border-radius:50%;border:1.5px solid var(--ink);background:var(--paper);display:grid;place-items:center}
+.mode.lang{right:calc(max(12px, env(safe-area-inset-right, 0px)) + 48px);font-family:var(--mono);font-size:12px;font-weight:600;letter-spacing:.04em;color:var(--ink)}
 .mode i{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--ink);background:linear-gradient(90deg,var(--ink) 50%,transparent 50%)}
 html,body{height:100%}
 body{background:var(--paper);color:var(--ink);font-family:var(--ui);font-size:15px;line-height:1.45;
@@ -168,6 +169,7 @@ button.warn{background:var(--ink);color:var(--paper)}
 </style>
 
 </head><body>
+<button class="mode lang" id="lang" onclick="setLang(LANG==='nl'?'en':'nl')" aria-label="Schakel naar Nederlands">NL</button>
 <button class="mode" id="mode" onclick="toggleTheme()" aria-label="Switch to dark mode"><i></i></button>
 <div class="wrap" id="app"></div>
 <div class="toast" id="toast" hidden></div>
@@ -206,18 +208,34 @@ const THEMES = {
     places:["in a glove","under the skin","in the mirror","on the doorstep","inside a pocket"]
   }
 };
-const DRAW_PARTS = {3:["Head","Body","Legs"],4:["Head","Torso","Legs","Feet"]};
-const WORD_PARTS = {3:["Who","Does what","Where"],4:["Who","Does what","To whom","Where"]};
+// ---------- language: English or Dutch, remembered per phone ----------
+let LANG=(()=>{ try{ const l=localStorage.getItem("ec-lang"); if(l==="nl"||l==="en") return l; }catch(e){} return /^nl\b/i.test(navigator.language||"")?"nl":"en"; })();
+const T=(en,nl)=>LANG==="nl"?nl:en;
+const DRAW_PARTS_L = {en:{3:["Head","Body","Legs"],4:["Head","Torso","Legs","Feet"]}, nl:{3:["Hoofd","Lijf","Benen"],4:["Hoofd","Romp","Benen","Voeten"]}};
+const WORD_PARTS_L = {en:{3:["Who","Does what","Where"],4:["Who","Does what","To whom","Where"]}, nl:{3:["Wie","Doet wat","Waar"],4:["Wie","Doet wat","Met wie","Waar"]}};
 // help line and example per part; 3 parts is the current game, 4 keeps older links working
-const WORD_HELP = {
+const WORD_HELP_L = {en:{
   3:[["Who or what? An adjective and a noun.","The glass horse"],
      ["What does it do? A verb, and to whom or what if you like.","swallows a sleeping lighthouse"],
      ["Where or when?","under the kitchen sea"]],
   4:[["Who or what? An adjective and a noun.","The glass horse"],
      ["What does it do? A verb.","swallows"],
      ["To whom or what? An adjective and a noun.","a sleeping lighthouse"],
-     ["Where or when?","under the kitchen sea"]]
-};
+     ["Where or when?","under the kitchen sea"]]},
+ nl:{
+  3:[["Wie of wat? Een bijvoeglijk naamwoord en een zelfstandig naamwoord.","Het glazen paard"],
+     ["Wat doet het? Een werkwoord, en met wie of wat als je wil.","slikt een slapende vuurtoren in"],
+     ["Waar of wanneer?","onder de keukenzee"]],
+  4:[["Wie of wat? Een bijvoeglijk naamwoord en een zelfstandig naamwoord.","Het glazen paard"],
+     ["Wat doet het? Een werkwoord.","slikt"],
+     ["Met wie of wat? Een bijvoeglijk naamwoord en een zelfstandig naamwoord.","een slapende vuurtoren"],
+     ["Waar of wanneer?","onder de keukenzee"]]}};
+const WORD_PARTS = new Proxy({}, {get:(_,k)=>WORD_PARTS_L[LANG][k]});
+const DRAW_PARTS = new Proxy({}, {get:(_,k)=>DRAW_PARTS_L[LANG][k]});
+const WORD_HELP = new Proxy({}, {get:(_,k)=>WORD_HELP_L[LANG][k]});
+function setLang(l){ LANG=l; store.set("ec-lang",l); applyLang(); render(); }
+function applyLang(){ document.documentElement.lang=LANG; const b=document.getElementById("lang"); if(b){ b.textContent=LANG==="nl"?"EN":"NL"; b.setAttribute("aria-label",LANG==="nl"?"Switch to English":"Schakel naar Nederlands"); }
+  if(S?.screen!=="reveal") document.title=T("Exquisite Corpse","Cadavre exquis"); }
 const W = 1000, H = 700, FOLD = 630, LW = 9;
 
 // ---------- small helpers ----------
@@ -233,8 +251,8 @@ const dec = str => decS(str).strokes;
 let toastT;
 function toast(msg,ms=2200){ const t=$("#toast"); t.textContent=msg; t.hidden=false; clearTimeout(toastT); toastT=setTimeout(()=>t.hidden=true,ms); }
 async function copy(text, btn){
-  try{ await navigator.clipboard.writeText(text); toast("Copied"); }
-  catch(e){ const box=btn?.closest(".stack")?.querySelector(".linkbox"); if(box){ const r=document.createRange(); r.selectNodeContents(box); const s=getSelection(); s.removeAllRanges(); s.addRange(r);} toast("Select the text and copy it"); }
+  try{ await navigator.clipboard.writeText(text); toast(T("Copied","Gekopieerd")); }
+  catch(e){ const box=btn?.closest(".stack")?.querySelector(".linkbox"); if(box){ const r=document.createRange(); r.selectNodeContents(box); const s=getSelection(); s.removeAllRanges(); s.addRange(r);} toast(T("Select the text and copy it","Selecteer de tekst en kopieer hem")); }
 }
 const store = { get(k){ try{return localStorage.getItem(k)||"";}catch(e){return "";} }, set(k,v){ try{localStorage.setItem(k,v);}catch(e){} } };
 
@@ -255,8 +273,8 @@ let S = { screen:"home", edition:"draw", theme:"Dream zoo", parts:3, mode:"local
 function persist(){ if(S.mode!=="local") return; store.set("ec-game", S.game && S.game.turns.length<S.game.parts ? JSON.stringify({g:S.game,d:S.draft,screen:S.screen}) : ""); }
 function savedGame(){ try{ return JSON.parse(store.get("ec-game")||"null"); }catch(e){ return null; } }
 function resumeBtn(){ const sv=savedGame(); if(!sv) return "";
-  return `<div class="card" style="gap:10px"><span class="lab">Unfinished game</span><p>${sv.g.edition==="draw"?"Drawing":"Words"} · ${sv.g.turns.length} of ${sv.g.parts} parts done</p>
-  <div class="row"><button class="solid" onclick="resume()">Continue</button>${confirmBtn("drop","Discard","Discard it?","ghost","store.set('ec-game','');render()")}</div></div>`; }
+  return `<div class="card" style="gap:10px"><span class="lab">${T("Unfinished game","Onafgewerkt spel")}</span><p>${sv.g.edition==="draw"?T("Drawing","Tekenen"):T("Words","Woorden")} · ${sv.g.turns.length} ${T("of","van")} ${sv.g.parts} ${T("parts done","delen klaar")}</p>
+  <div class="row"><button class="solid" onclick="resume()">${T("Continue","Verder")}</button>${confirmBtn("drop",T("Discard","Weggooien"),T("Discard it?","Echt weggooien?"),"ghost","store.set('ec-game','');render()")}</div></div>`; }
 function resume(){ const sv=savedGame(); if(!sv) return; S.mode="local"; S.game=sv.g; S.draft=sv.d; go(sv.screen==="turn"?"turn":"handoff"); }
 function quitGame(){ if(S.mode==="local") store.set("ec-game",""); S.game=null; S.draft=null; location.hash=""; go("home"); }
 function newGame(){
@@ -287,7 +305,7 @@ function paint(ctx, strokes, opts={}){
   if(opts.guides){
     ctx.strokeStyle=GUIDE; ctx.lineWidth=2; ctx.setLineDash([10,10]);
     if(!opts.last){ ctx.beginPath(); ctx.moveTo(0,FOLD); ctx.lineTo(W,FOLD); ctx.stroke();
-      ctx.setLineDash([]); ctx.fillStyle=MUTE; ctx.font="500 20px Geist Mono, monospace"; ctx.fillText("FOLD · CARRY YOUR LINES DOWN HERE", 20, FOLD+40); }
+      ctx.setLineDash([]); ctx.fillStyle=MUTE; ctx.font="500 20px Geist Mono, monospace"; ctx.fillText(T("FOLD · CARRY YOUR LINES DOWN HERE","VOUW · LAAT JE LIJNEN HIER DOORLOPEN"), 20, FOLD+40); }
     ctx.setLineDash([]);
   }
   if(opts.dots){ ctx.fillStyle=INK; for(const d of opts.dots){ ctx.beginPath(); ctx.arc(d.x,10,11,0,7); ctx.fill(); } }
@@ -324,8 +342,8 @@ let PEN={w:+store.get("ec-pen-w")||1, c:+store.get("ec-pen-c")||0};
 const penCode=()=>PEN.w*10+PEN.c;
 function setPen(k,v){ PEN[k]=v; store.set("ec-pen-"+k,String(v)); document.querySelectorAll(`[data-pen-${k}]`).forEach(b=>b.setAttribute("aria-pressed",+b.dataset["pen"+k.toUpperCase()]===v)); }
 function penBar(){
-  const sizes=["Fine","Medium","Thick"].map((n,i)=>`<button class="pen" data-pen-w="${i}" aria-pressed="${PEN.w===i}" aria-label="${n} line" title="${n}" onclick="setPen('w',${i})"><i style="width:${[5,9,15][i]}px;height:${[5,9,15][i]}px"></i></button>`).join("");
-  const cols=PEN_C.map((c,i)=>`<button class="pen sw" data-pen-c="${i}" aria-pressed="${PEN.c===i}" aria-label="${i?(c==="#111111"?"Black":"Colour "+c):"Cobalt"}" onclick="setPen('c',${i})"><i style="background:${c==="ink"?"var(--ink)":c}"></i></button>`).join("");
+  const sizes=[T("Fine","Fijn"),T("Medium","Medium"),T("Thick","Dik")].map((n,i)=>`<button class="pen" data-pen-w="${i}" aria-pressed="${PEN.w===i}" aria-label="${n}" title="${n}" onclick="setPen('w',${i})"><i style="width:${[5,9,15][i]}px;height:${[5,9,15][i]}px"></i></button>`).join("");
+  const cols=PEN_C.map((c,i)=>`<button class="pen sw" data-pen-c="${i}" aria-pressed="${PEN.c===i}" aria-label="${i?(c==="#111111"?T("Black","Zwart"):T("Colour ","Kleur ")+c):T("Cobalt","Kobalt")}" onclick="setPen('c',${i})"><i style="background:${c==="ink"?"var(--ink)":c}"></i></button>`).join("");
   return `<div class="pens"><div class="row" style="gap:2px">${sizes}</div><span class="pensep"></span><div class="row" style="gap:2px">${cols}</div></div>`;
 }
 function sizeCanvas(c){ const r=c.getBoundingClientRect(), d=Math.min(window.devicePixelRatio||1,3); c.width=Math.round(r.width*d); c.height=Math.round(r.width*d*H/W); }
@@ -359,13 +377,13 @@ function openCheat(){
   cheatReturn=document.activeElement;
   const bg=document.createElement("div"); bg.className="sheetbg"; bg.id="cheat";
   bg.innerHTML=`<div class="cheat" role="dialog" aria-modal="true" aria-labelledby="cheat-h">
-    <div class="topbar"><span class="lab">Cheat</span><button class="ghost chip" id="cheat-x" onclick="closeCheat()">Close</button></div>
-    <h2 id="cheat-h">Look at the masters</h2>
-    <p class="muted" style="font-size:14px">The best-known exquisite corpses, made by the surrealists who invented the game. The images belong to the museums, so each one opens on the museum's site.</p>
+    <div class="topbar"><span class="lab">${T("Cheat","Spiekbrief")}</span><button class="ghost chip" id="cheat-x" onclick="closeCheat()">${T("Close","Sluiten")}</button></div>
+    <h2 id="cheat-h">${T("Look at the masters","Kijk naar de meesters")}</h2>
+    <p class="muted" style="font-size:14px">${T("The best-known exquisite corpses, made by the surrealists who invented the game. The images belong to the museums, so each one opens on the museum\'s site.","De bekendste cadavres exquis, gemaakt door de surrealisten die het spel bedachten. De beelden zijn van de musea, dus elk werk opent op de site van het museum.")}</p>
     ${MASTERS.map(m=>`<div class="art"><div class="yr">${m.yr}</div><div class="stack" style="gap:4px">
       <span class="ti">${esc(m.ti)}</span><span class="by">${esc(m.by)}</span><span class="md">${esc(m.md)}</span>
-      <a href="${m.url}" target="_blank" rel="noopener">See it at ${esc(m.at)} ↗</a></div></div>`).join("")}
-    <a href="https://www.moma.org/collection/terms/exquisite-corpse" target="_blank" rel="noopener" style="color:var(--ink);font-size:14px;text-underline-offset:3px">More at MoMA: exquisite corpse ↗</a>
+      <a href="${m.url}" target="_blank" rel="noopener">${T("See it at","Bekijk bij")} ${esc(m.at)} ↗</a></div></div>`).join("")}
+    <a href="https://www.moma.org/collection/terms/exquisite-corpse" target="_blank" rel="noopener" style="color:var(--ink);font-size:14px;text-underline-offset:3px">${T("More at MoMA: exquisite corpse ↗","Meer bij MoMA: exquisite corpse ↗")}</a>
   </div>`;
   bg.addEventListener("click",e=>{ if(e.target===bg) closeCheat(); });
   document.body.appendChild(bg); document.body.style.overflow="hidden"; $("#cheat-x").focus();
@@ -408,41 +426,42 @@ async function ensureInDB(g){
   if(g.inDB) return; g.id=newId(); await dbCreate(g); await api("turns",{method:"POST",body:JSON.stringify(g.turns.map((t,n)=>turnRow(g,n,t)))}); g.inDB=true;
 }
 async function publishToWall(btn){
-  const g=S.game; btn.disabled=true; btn.textContent="Publishing…";
+  const g=S.game; btn.disabled=true; btn.textContent=T("Publishing…","Publiceren…");
   try{
     await ensureInDB(g);
     try{ await api("wall",{method:"POST",body:JSON.stringify({game_id:g.id})}); }catch(e){ if(e.status!==409) throw e; }
-    g.onWall=true; btn.textContent="On the wall"; toast("Published to the wall");
-  }catch(e){ btn.disabled=false; btn.textContent="Publish to wall"; toast("Could not publish ("+(e.status||"no connection")+"): "+(e.message||e), 9000); }
+    g.onWall=true; btn.textContent=T("On the wall","Op de muur"); toast(T("Published to the wall","Op de muur gezet"));
+  }catch(e){ btn.disabled=false; btn.textContent=T("Publish to wall","Op de muur zetten"); toast(T("Could not publish (","Publiceren lukte niet (")+(e.status||T("no connection","geen verbinding"))+"): "+(e.message||e), 9000); }
 }
 // ---------- AI pen drawing of a finished sentence (server function "pen-drawing" calls Claude) ----------
 const AI_ON = /[?&]ai\b/.test(location.search); // test with ?ai until the Supabase function is set up
 async function makeAI(btn){
-  const g=S.game; btn.disabled=true; btn.classList.add("busy"); btn.innerHTML=`<span class="pen-busy" aria-hidden="true"></span>Drawing your sentence… about half a minute`;
+  const g=S.game; btn.disabled=true; btn.classList.add("busy"); btn.innerHTML=`<span class="pen-busy" aria-hidden="true"></span>${T("Drawing your sentence… about half a minute","Je zin wordt getekend… ongeveer een halve minuut")}`;
   try{
     await ensureInDB(g);
     const r=await fetch(SB.url.replace(/\/$/,"")+"/functions/v1/pen-drawing",{method:"POST",headers:{apikey:SB.key,"Content-Type":"application/json"},body:JSON.stringify({game_id:g.id})});
     let j={}; try{ j=await r.json(); }catch(_){}
-    if(!r.ok||!j.strokes){ const e=new Error(r.status===404?"the AI drawing is not switched on yet":(j.error||j.message||"error "+r.status)); e.status=r.status; throw e; }
+    if(!r.ok||!j.strokes){ const e=new Error(r.status===404?T("the AI drawing is not switched on yet","de AI-tekening staat nog niet aan"):(j.error||j.message||"error "+r.status)); e.status=r.status; throw e; }
     g.ai={strokes:dec(j.strokes),title:j.title||"",fresh:true}; render();
     setTimeout(()=>$("#ai")?.scrollIntoView({behavior:"smooth",block:"center"}),100);
-  }catch(e){ btn.disabled=false; btn.classList.remove("busy"); btn.innerHTML=AI_BADGE+"Make a pen drawing of this sentence"; toast("No drawing ("+(e.status||"no connection")+"): "+(e.message||e), 9000); }
+  }catch(e){ btn.disabled=false; btn.classList.remove("busy"); btn.innerHTML=AI_BADGE+T("Make a pen drawing of this sentence","Maak een pentekening van deze zin"); toast(T("No drawing (","Geen tekening (")+(e.status||T("no connection","geen verbinding"))+"): "+(e.message||e), 9000); }
 }
 async function publishAI(btn){
-  const g=S.game; btn.disabled=true; btn.textContent="Publishing…";
+  const g=S.game; btn.disabled=true; btn.textContent=T("Publishing…","Publiceren…");
   try{ try{ await api("ai_wall",{method:"POST",body:JSON.stringify({game_id:g.id})}); }catch(e){ if(e.status!==409) throw e; }
-    g.aiOnWall=true; btn.textContent="Drawing is on the wall"; toast("AI drawing published to the wall");
-  }catch(e){ btn.disabled=false; btn.textContent="Publish drawing to wall"; toast("Could not publish ("+(e.status||"no connection")+"): "+(e.message||e), 9000); }
+    g.aiOnWall=true; btn.textContent=T("Drawing is on the wall","Tekening staat op de muur"); toast(T("AI drawing published to the wall","AI-tekening op de muur gezet"));
+  }catch(e){ btn.disabled=false; btn.textContent=T("Publish drawing to wall","Tekening op de muur zetten"); toast(T("Could not publish (","Publiceren lukte niet (")+(e.status||T("no connection","geen verbinding"))+"): "+(e.message||e), 9000); }
 }
-const AI_BADGE = `<span class="aibadge" title="Made by AI from the players' sentence"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5l1.6 4.9 4.9 1.6-4.9 1.6L8 14.5l-1.6-4.9L1.5 8l4.9-1.6z"/></svg>AI</span>`;
+const AI_BADGE_ = () => `<span class="aibadge" title="${T("Made by AI from the players' sentence","Gemaakt door AI op basis van de zin van de spelers")}"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5l1.6 4.9 4.9 1.6-4.9 1.6L8 14.5l-1.6-4.9L1.5 8l4.9-1.6z"/></svg>AI</span>`;
+const AI_BADGE_P = {}; Object.defineProperty(window,"AI_BADGE",{get:AI_BADGE_});
 function aiBlock(g, ex){
   if(!hasDB()) return "";
-  if(g.ai) return `<div class="aibox" id="ai"><div class="aihead">${AI_BADGE}<span>Pen drawing by AI${g.ai.title?" · "+esc(g.ai.title):""}</span></div>
-    <canvas id="aican" aria-label="AI pen drawing of the sentence"></canvas>
-    <p class="muted aicap">Drawn by AI from the sentence above. The players wrote the words, not the lines.</p>
-    ${ex?"":`<button class="wide" ${g.aiOnWall?"disabled":""} onclick="publishAI(this)">${g.aiOnWall?"Drawing is on the wall":"Publish drawing to wall"}</button>`}</div>`;
+  if(g.ai) return `<div class="aibox" id="ai"><div class="aihead">${AI_BADGE}<span>${T("Pen drawing by AI","Pentekening door AI")}${g.ai.title?" · "+esc(g.ai.title):""}</span></div>
+    <canvas id="aican" aria-label="${T("AI pen drawing of the sentence","AI-pentekening van de zin")}"></canvas>
+    <p class="muted aicap">${T("Drawn by AI from the sentence above. The players wrote the words, not the lines.","Getekend door AI op basis van de zin hierboven. De spelers schreven de woorden, niet de lijnen.")}</p>
+    ${ex?"":`<button class="wide" ${g.aiOnWall?"disabled":""} onclick="publishAI(this)">${g.aiOnWall?T("Drawing is on the wall","Tekening staat op de muur"):T("Publish drawing to wall","Tekening op de muur zetten")}</button>`}</div>`;
   if(ex||!AI_ON) return "";
-  return `<button class="wide aibtn" onclick="makeAI(this)">${AI_BADGE}Make a pen drawing of this sentence</button>`;
+  return `<button class="wide aibtn" onclick="makeAI(this)">${AI_BADGE}${T("Make a pen drawing of this sentence","Maak een pentekening van deze zin")}</button>`;
 }
 function paintAI(c, g, t=1){ const r=c.getBoundingClientRect(), d=Math.min(window.devicePixelRatio||1,3); if(c.width!==Math.round(r.width*d)){ c.width=Math.round(r.width*d); c.height=c.width; }
   paint(c.getContext("2d"), partial(g.ai.strokes,t), {st:[]}); }
@@ -451,22 +470,22 @@ const mine = { all(){ try{ return JSON.parse(store.get("ec-mine")||"[]"); }catch
   add(g){ const a=mine.all().filter(x=>x.id!==g.id); a.unshift({id:g.id,edition:g.edition,parts:g.parts,at:Date.now()}); store.set("ec-mine",JSON.stringify(a.slice(0,8))); } };
 let WALL=[];
 function wallHtml(){
-  return `<div class="stack" id="wall-top"><span class="lab">The wall</span><h2>Made with this app</h2>
-  <p class="muted" style="font-size:13px">Finished pieces that players chose to publish. Tap one to unfold it.</p></div>
+  return `<div class="stack" id="wall-top"><span class="lab">${T("The wall","De muur")}</span><h2>${T("Made with this app","Gemaakt met deze app")}</h2>
+  <p class="muted" style="font-size:13px">${T("Finished pieces that players chose to publish. Tap one to unfold it.","Afgewerkte stukken die spelers publiceerden. Tik erop om ze open te vouwen.")}</p></div>
   <div class="wall" id="wall"></div>
-  <p class="muted" id="wall-empty" ${hasDB()?"hidden":""}>Nothing on the wall yet. Finish a game and tap <b>Publish to wall</b> to be the first.</p>`;
+  <p class="muted" id="wall-empty" ${hasDB()?"hidden":""}>${T("Nothing on the wall yet. Finish a game and tap <b>Publish to wall</b> to be the first.","Nog niets op de muur. Speel een spel uit en tik op <b>Op de muur zetten</b> om de eerste te zijn.")}</p>`;
 }
 async function loadWall(){
   if(!hasDB()) return;
   try{ WALL=await dbWall(); }catch(e){ WALL=[]; }
   const w=$("#wall"), em=$("#wall-empty"); if(!w) return;
   em.hidden=WALL.length>0;
-  w.innerHTML=WALL.map((e,i)=>e.kind==="ai"?`<button class="aicard" onclick="openWall(${i})" aria-label="Open AI drawing ${i+1}">
+  w.innerHTML=WALL.map((e,i)=>e.kind==="ai"?`<button class="aicard" onclick="openWall(${i})" aria-label="${T("Open AI drawing","Open AI-tekening")} ${i+1}">
     <div class="aitag">${AI_BADGE}</div><canvas class="sq" data-ai="${i}"></canvas><div class="wq wqs">${esc(wordsText(e))}</div>
-    <div class="tg">AI drawing · words by ${esc(e.turns.map(t=>t.name).filter(Boolean).join(" · ")||"players")}</div></button>`
-    :`<button onclick="openWall(${i})" aria-label="Open piece ${i+1}">
+    <div class="tg">${T("AI drawing · words by","AI-tekening · woorden van")} ${esc(e.turns.map(t=>t.name).filter(Boolean).join(" · ")||T("players","spelers"))}</div></button>`
+    :`<button onclick="openWall(${i})" aria-label="${T("Open piece","Open stuk")} ${i+1}">
     ${e.edition==="draw"? e.turns.map((t,j)=>`<canvas data-ex="${i}" data-p="${j}"></canvas>`).join("") : `<div class="wq">${e.turns.map(t=>esc(t.text)).join(" ")}</div>`}
-    <div class="tg">${esc(e.turns.map(t=>t.name).filter(Boolean).join(" · ")||(e.edition==="draw"?"Drawing":"Words"))}</div></button>`).join("");
+    <div class="tg">${esc(e.turns.map(t=>t.name).filter(Boolean).join(" · ")||(e.edition==="draw"?T("Drawing","Tekenen"):T("Words","Woorden")))}</div></button>`).join("");
   w.querySelectorAll("canvas[data-ai]").forEach(c=>paintAI(c, WALL[+c.dataset.ai]));
   w.querySelectorAll("canvas[data-ex]").forEach(c=>{ sizeCanvas(c); paint(c.getContext("2d"), WALL[+c.dataset.ex].turns[+c.dataset.p].strokes, {st:WALL[+c.dataset.ex].turns[+c.dataset.p].st, start:+c.dataset.p===0?WALL[+c.dataset.ex].start:null}); });
 }
@@ -474,9 +493,9 @@ function openWall(i){ S.mode="wall"; S.game={...WALL[i],inDB:true}; LINK=locatio
 async function yourGames(){
   const box=$("#yours"); if(!box||!hasDB()) return; const list=mine.all(); if(!list.length) return;
   const rows=await Promise.all(list.slice(0,5).map(async x=>({...x,count:await dbCount(x.id).catch(()=>null)})));
-  box.innerHTML=`<span class="lab">Your games</span>`+rows.map(x=>{ const done=x.count!==null&&x.count>=x.parts;
-    return `<div class="row" style="justify-content:space-between;border-top:1px solid var(--line);padding-top:8px"><span>${x.edition==="draw"?"Drawing":"Words"} · ${x.count===null?"…":x.count+" of "+x.parts} parts</span>
-    ${done?`<button class="solid chip" onclick="openGame('${x.id}')">Unfold the reveal</button>`:`<span class="muted" style="font-size:13px">waiting</span>`}</div>`; }).join("");
+  box.innerHTML=`<span class="lab">${T("Your games","Jouw spellen")}</span>`+rows.map(x=>{ const done=x.count!==null&&x.count>=x.parts;
+    return `<div class="row" style="justify-content:space-between;border-top:1px solid var(--line);padding-top:8px"><span>${x.edition==="draw"?T("Drawing","Tekenen"):T("Words","Woorden")} · ${x.count===null?"…":x.count+T(" of "," van ")+x.parts} ${T("parts","delen")}</span>
+    ${done?`<button class="solid chip" onclick="openGame('${x.id}')">${T("Unfold the reveal","Vouw open")}</button>`:`<span class="muted" style="font-size:13px">${T("waiting","bezig")}</span>`}</div>`; }).join("");
   box.hidden=false;
 }
 async function openGame(id){ location.hash="g-"+id; }
@@ -520,12 +539,12 @@ function shareGrid(msg, link, subject){
   const opts=[
     ["WhatsApp","https://wa.me/?text="+e(full)],
     ["Email","mailto:?subject="+e(subject)+"&body="+e(full)],
-    ["Messages","sms:?&body="+e(full)],
+    [T("Messages","Berichten"),"sms:?&body="+e(full)],
     ["Telegram","https://t.me/share/url?url="+e(link)+"&text="+e(msg)],
     ["X","https://x.com/intent/post?text="+e(full)],
   ];
   return `<div class="sharegrid">${opts.map(([n,u])=>`<a class="btn" href="${esc(u)}" target="_blank" rel="noopener">${n}</a>`).join("")}
-    <button style="font-size:14px;padding:10px 8px" onclick="copy(${esc(JSON.stringify(link))},this)">Copy link</button></div>`;
+    <button style="font-size:14px;padding:10px 8px" onclick="copy(${esc(JSON.stringify(link))},this)">${T("Copy link","Kopieer link")}</button></div>`;
 }
 async function shareLink(text, btn){
   if(navigator.share){ try{ await navigator.share({text}); if(S.screen==="sent") sentIt(); return; }catch(e){ if(e?.name==="AbortError") return; } }
@@ -533,12 +552,12 @@ async function shareLink(text, btn){
 }
 
 // ---------- screens ----------
-function go(screen){ if(screen!=="waiting") stopPoll(); if(screen!=="reveal" && S.screen==="reveal") document.title="Exquisite Corpse"; S.screen=screen; render(); scrollTo(0,0); if(S.game) persist(); }
+function go(screen){ if(screen!=="waiting") stopPoll(); if(screen!=="reveal" && S.screen==="reveal") document.title=T("Exquisite Corpse","Cadavre exquis"); S.screen=screen; render(); scrollTo(0,0); if(S.game) persist(); }
 
 function render(){
   const app=$("#app");
-  const f = ({home,turn,handoff,reveal,sent,waiting,join,loading:()=>`<p class="muted">Unfolding the paper…</p>`,
-    missing:()=>`<h2>This link doesn't open a game</h2><p class="muted">It may have been cut off when it was shared. Ask for the full link.</p><button class="solid" onclick="location.hash='';go('home')">Start a new one</button>`,
+  const f = ({home,turn,handoff,reveal,sent,waiting,join,loading:()=>`<p class="muted">${T("Unfolding the paper…","Het papier wordt opengevouwen…")}</p>`,
+    missing:()=>`<h2>${T("This link doesn't open a game","Deze link opent geen spel")}</h2><p class="muted">${T("It may have been cut off when it was shared. Ask for the full link.","Misschien is hij afgeknipt bij het delen. Vraag de volledige link.")}</p><button class="solid" onclick="location.hash='';go('home')">${T("Start a new one","Begin een nieuw spel")}</button>`,
     noaccess:()=>`<h2>You've been asked to add a part</h2><p class="muted">Sign in to claude.ai to open shared games. Or start your own game on one phone.</p><button class="solid" onclick="location.hash='';go('home')">Start a game</button>`})[S.screen];
   app.innerHTML = f();
   after[S.screen]?.();
@@ -550,34 +569,32 @@ function home(){
   return `
   <div class="stack" style="gap:6px">
     <span class="lab">OOJO game</span>
-    <h1>Exquisite<br><em>corpse</em></h1>
+    <h1>${T("Exquisite<br><em>corpse</em>","Cadavre<br><em>exquis</em>")}</h1>
   </div>
-  <div class="row" style="gap:4px 16px"><button class="ghost chip" style="padding-left:0" onclick="$('#wall-top').scrollIntoView({behavior:'smooth'})">The wall ↓</button>
-  <button class="ghost chip" style="padding-left:0" onclick="openCheat()">Cheat: look at the masters</button></div>
-  <p>Each player adds one part of a figure or a sentence without seeing the rest. Only the fold gives a hint. The whole thing is revealed at the end.</p>
+  <div class="row" style="gap:4px 16px"><button class="ghost chip" style="padding-left:0" onclick="$('#wall-top').scrollIntoView({behavior:'smooth'})">${T("The wall ↓","De muur ↓")}</button>
+  <button class="ghost chip" style="padding-left:0" onclick="openCheat()">${T("Cheat: look at the masters","Spiekbrief: kijk naar de meesters")}</button></div>
+  <p>${T("Each player adds one part of a figure or a sentence without seeing the rest. Only the fold gives a hint. The whole thing is revealed at the end.","Elke speler voegt een deel van een figuur of een zin toe zonder de rest te zien. Alleen de vouw geeft een hint. Op het einde wordt alles onthuld.")}</p>
 
   ${resumeBtn()}
-  <div class="stack"><span class="lab">Edition</span>
+  <div class="stack"><span class="lab">${T("Edition","Editie")}</span>
     <div class="seg">
-      <button aria-pressed="${S.edition==="draw"}" onclick="S.edition='draw';render()">Drawing</button>
-      <button aria-pressed="${S.edition==="words"}" onclick="S.edition='words';render()">Words</button>
+      <button aria-pressed="${S.edition==="draw"}" onclick="S.edition='draw';render()">${T("Drawing","Tekenen")}</button>
+      <button aria-pressed="${S.edition==="words"}" onclick="S.edition='words';render()">${T("Words","Woorden")}</button>
     </div>
-    ${S.edition==="draw" ? `<div class="steps" aria-label="How to play Drawing">
-      <div><b>1</b><span><strong>Draw a head.</strong> Start from the dots. Let a few lines run down past the dashed line.</span></div>
-      <div><b>2</b><span><strong>Draw a body.</strong> You only see dots where the lines above ended. Start from those.</span></div>
-      <div><b>3</b><span><strong>Draw legs.</strong> Same again.</span></div>
-      <div class="end">Then unfold it and see the whole creature for the first time.</div>
-    </div>` : `<div class="steps" aria-label="How to play Words">
-      <div><b>1</b><span><strong>Who?</strong> <i>The glass horse</i></span></div>
-      <div><b>2</b><span><strong>Does what?</strong> <i>swallows a sleeping lighthouse</i></span></div>
-      <div><b>3</b><span><strong>Where?</strong> <i>under the kitchen sea</i></span></div>
-      <div class="end">One player per line. You only see the last word before yours. Then read the whole sentence out loud.</div>
+    ${S.edition==="draw" ? `<div class="steps" aria-label="${T("How to play Drawing","Zo speel je Tekenen")}">
+      <div><b>1</b><span>${T("<strong>Draw a head.</strong> Start from the dots. Let a few lines run down past the dashed line.","<strong>Teken een hoofd.</strong> Begin bij de stippen. Laat een paar lijnen doorlopen tot over de stippellijn.")}</span></div>
+      <div><b>2</b><span>${T("<strong>Draw a body.</strong> You only see dots where the lines above ended. Start from those.","<strong>Teken een lijf.</strong> Je ziet alleen stippen waar de lijnen erboven stopten. Begin daar.")}</span></div>
+      <div><b>3</b><span>${T("<strong>Draw legs.</strong> Same again.","<strong>Teken benen.</strong> Net hetzelfde.")}</span></div>
+      <div class="end">${T("Then unfold it and see the whole creature for the first time.","Vouw dan open en zie het hele wezen voor het eerst.")}</div>
+    </div>` : `<div class="steps" aria-label="${T("How to play Words","Zo speel je Woorden")}">
+      ${[0,1,2].map(i=>`<div><b>${i+1}</b><span><strong>${WORD_PARTS[3][i]}?</strong> <i>${WORD_HELP[3][i][1]}</i></span></div>`).join("")}
+      <div class="end">${T("One player per line. You only see the last word before yours. Then read the whole sentence out loud.","Eén speler per regel. Je ziet alleen het laatste woord voor het jouwe. Lees daarna de hele zin hardop voor.")}</div>
     </div>`}
   </div>
 
   <div class="stack">
-    <button class="solid wide" onclick="startLocal()">Play on this phone · pass it around</button>
-    <button class="wide" onclick="startRemote()">Play over a link · one part each</button>
+    <button class="solid wide" onclick="startLocal()">${T("Play on this phone · pass it around","Speel op deze gsm · geef hem door")}</button>
+    <button class="wide" onclick="startRemote()">${T("Play over a link · one part each","Speel via een link · ieder een deel")}</button>
   </div>
 
   <div class="stack" id="yours" hidden></div>
@@ -597,32 +614,32 @@ function turn(){
   const t=THEMES[g.theme]||THEMES["Dream zoo"];
   if(!S.draft) S.draft={strokes:[], st:[], text:"", name:store.get("ec-name"), kws: g.edition==="draw"? pick(t.nouns,4) : kwFor(n,t)};
   const d=S.draft;
-  const top=`<div class="topbar"><span class="lab">${g.edition==="draw"?"Drawing":"Words"}</span><div class="row" style="gap:2px"><button class="ghost chip" onclick="openCheat()">Cheat</button>${confirmBtn("quit","Quit","Quit game?","ghost chip","quitGame()")}</div></div>`;
+  const top=`<div class="topbar"><span class="lab">${g.edition==="draw"?T("Drawing","Tekenen"):T("Words","Woorden")}</span><div class="row" style="gap:2px"><button class="ghost chip" onclick="openCheat()">${T("Cheat","Spieken")}</button>${confirmBtn("quit",T("Quit","Stoppen"),T("Quit game?","Spel stoppen?"),"ghost chip","quitGame()")}</div></div>`;
   const prog=top+`<div class="progress">${Array.from({length:g.parts},(_,i)=>`<i class="${i<=n?"on":""}"></i>`).join("")}</div>`;
   const kw=`<div class="stack"><div class="row" style="justify-content:space-between"><span class="lab">Need an idea? · ${esc(g.theme)}</span><button class="ghost chip" onclick="reshuffle()">Shuffle</button></div>
     <div class="chips">${d.kws.map(k=>`<button class="chip kw" onclick="useKw(this.textContent)">${esc(k)}</button>`).join("")}</div></div>`;
-  const sign=`<input type="text" id="sign" maxlength="24" placeholder="Sign your part (optional)" value="${esc(d.name)}" oninput="S.draft.name=this.value">`;
+  const sign=`<input type="text" id="sign" maxlength="24" placeholder="${T("Sign your part (optional)","Onderteken je deel (mag)")}" value="${esc(d.name)}" oninput="S.draft.name=this.value">`;
   if(g.edition==="draw"){
-    const intro = n===0 ? `Start from the four dots. Draw the <b>${names[n].toLowerCase()}</b> of a creature.` :
-      `The dots at the top are where the last player's lines cross the fold. Pick them up and draw the <b>${names[n].toLowerCase()}</b>.`;
+    const intro = n===0 ? T(`Start from the four dots. Draw the <b>${names[n].toLowerCase()}</b> of a creature.`,`Begin bij de vier stippen. Teken het <b>${names[n].toLowerCase()}</b> van een wezen.`) :
+      T(`The dots at the top are where the last player's lines cross the fold. Pick them up and draw the <b>${names[n].toLowerCase()}</b>.`,`De stippen bovenaan zijn de plekken waar de lijnen van de vorige speler de vouw kruisen. Ga daar verder en teken nu: <b>${names[n].toLowerCase()}</b>.`);
     return `${prog}
-    <div class="stack" style="gap:4px"><span class="lab">Part ${n+1} of ${g.parts}</span><h2>${names[n]}</h2></div>
-    <p>${intro}${last?"":" Carry some lines down past the fold."}</p>
+    <div class="stack" style="gap:4px"><span class="lab">${T("Part","Deel")} ${n+1} ${T("of","van")} ${g.parts}</span><h2>${names[n]}</h2></div>
+    <p>${intro}${last?"":T(" Carry some lines down past the fold."," Laat een paar lijnen doorlopen tot over de vouw.")}</p>
     ${penBar()}
     <div class="sheet"><canvas id="pad"></canvas></div>
-    <div class="tools"><div class="row"><button onclick="undo()">Undo</button>${confirmBtn("clear","Clear","Clear all?","ghost","clearPad()")}</div>
+    <div class="tools"><div class="row"><button onclick="undo()">${T("Undo","Ongedaan")}</button>${confirmBtn("clear",T("Clear","Wissen"),T("Clear all?","Alles wissen?"),"ghost","clearPad()")}</div>
       <span class="foldnote" id="cnt"></span></div>
     ${sign}
-    <button class="solid wide" id="done" onclick="finishTurn()">${last?"Finish and reveal":"Fold and pass on"}</button>`;
+    <button class="solid wide" id="done" onclick="finishTurn()">${last?T("Finish and reveal","Klaar, onthul"):T("Fold and pass on","Vouw en geef door")}</button>`;
   }
   const prev=n>0? g.turns[n-1].text.trim().split(/\s+/).pop() : "";
   return `${prog}
-    <div class="stack" style="gap:4px"><span class="lab">Part ${n+1} of ${g.parts}</span><h2>${WORD_PARTS[g.parts][n]}</h2></div>
+    <div class="stack" style="gap:4px"><span class="lab">${T("Part","Deel")} ${n+1} ${T("of","van")} ${g.parts}</span><h2>${WORD_PARTS[g.parts][n]}</h2></div>
     <p>${(WORD_HELP[g.parts]||WORD_HELP[3])[n][0]}</p>
     ${n>0?`<div class="wordfold">…<b>${esc(prev)}</b></div>`:""}
     <textarea id="txt" maxlength="70" rows="2" placeholder="${esc((WORD_HELP[g.parts]||WORD_HELP[3])[n][1])}" oninput="S.draft.text=this.value;persist();$('#done').disabled=!this.value.trim()">${esc(d.text)}</textarea>
     ${sign}
-    <button class="solid wide" id="done" ${d.text.trim()?"":"disabled"} onclick="finishTurn()">${last?"Finish and reveal":"Fold and pass on"}</button>`;
+    <button class="solid wide" id="done" ${d.text.trim()?"":"disabled"} onclick="finishTurn()">${last?T("Finish and reveal","Klaar, onthul"):T("Fold and pass on","Vouw en geef door")}</button>`;
 }
 function kwFor(n,t){
   if(n===1) return pick(t.verbs,4);
@@ -638,9 +655,9 @@ after.turn=()=>{
   pad=mountPad($("#pad"), S.draft.strokes, opts); updCount();
 };
 function updCount(){ const c=$("#cnt"); if(!c) return; const g=S.game, n=g.turns.length; if(n===g.parts-1){ c.textContent=""; $("#done").disabled=!S.draft.strokes.length; return; }
-  const k=S.draft.strokes.filter(s=>s.some((v,i)=>i%2&&v>=FOLD-10)).length; c.textContent=k+" line"+(k===1?"":"s")+" at the fold"; $("#done").disabled=!S.draft.strokes.length; }
+  const k=S.draft.strokes.filter(s=>s.some((v,i)=>i%2&&v>=FOLD-10)).length; c.textContent=T(k+" line"+(k===1?"":"s")+" at the fold",k+(k===1?" lijn":" lijnen")+" aan de vouw"); $("#done").disabled=!S.draft.strokes.length; }
 function undo(){ S.draft.strokes.pop(); S.draft.st?.pop(); pad?.redraw(); updCount(); persist(); }
-function clearPad(){ S.draft.strokes.length=0; if(S.draft.st) S.draft.st.length=0; pad?.redraw(); updCount(); persist(); toast('Cleared'); }
+function clearPad(){ S.draft.strokes.length=0; if(S.draft.st) S.draft.st.length=0; pad?.redraw(); updCount(); persist(); toast(T("Cleared","Gewist")); }
 function reshuffle(){ const g=S.game, t=THEMES[g.theme]; S.draft.kws = g.edition==="draw"? pick(t.nouns,4) : kwFor(g.turns.length,t); render(); }
 function useKw(k){
   if(S.game.edition==="draw"){ toast("Draw a "+k.toLowerCase()); return; }
@@ -653,8 +670,8 @@ async function finishTurn(){
   if(S.mode==="remote" && hasDB()){
     $("#done").disabled=true;
     try{ if(n===0){ g.id=newId(); await dbCreate(g); } await dbTurn(g,n,t); }
-    catch(e){ if(e.status===409){ toast("Someone already added this part. Loading the latest version."); return routeHash(); }
-      toast("Could not save ("+(e.status||"no connection")+"): "+(e.message||e), 9000); $("#done").disabled=false; return; }
+    catch(e){ if(e.status===409){ toast(T("Someone already added this part. Loading the latest version.","Iemand heeft dit deel al toegevoegd. De laatste versie wordt geladen.")); return routeHash(); }
+      toast(T("Could not save (","Opslaan lukte niet (")+(e.status||T("no connection","geen verbinding"))+"): "+(e.message||e), 9000); $("#done").disabled=false; return; }
     g.inDB=true; g.turns.push(t); S.draft=null; mine.add(g);
     LINK=location.origin+location.pathname+"#g-"+g.id; history.replaceState(null,"",location.pathname);
   } else if(S.mode==="remote"){
@@ -669,37 +686,39 @@ function handoff(){
   const g=S.game, n=g.turns.length;
   return `<div class="handoff">
     <div class="fold-ill"><i></i><i></i></div>
-    <span class="lab">Part ${n} done</span>
-    <h2>Fold. Pass the phone to the next player.</h2>
-    <p class="muted">No peeking. The next player draws the ${esc(partNames(g)[n].toLowerCase())} from ${g.edition==="draw"?"the dots at the fold":"the last word"} only.</p>
-    <button class="solid wide" onclick="go('turn')">I'm the next player</button>
+    <span class="lab">${T("Part","Deel")} ${n} ${T("done","klaar")}</span>
+    <h2>${T("Fold. Pass the phone to the next player.","Vouw. Geef de gsm aan de volgende speler.")}</h2>
+    <p class="muted">${T(`No peeking. The next player does the ${esc(partNames(g)[n].toLowerCase())} from ${g.edition==="draw"?"the dots at the fold":"the last word"} only.`,`Niet spieken. De volgende speler doet het deel ‘${esc(partNames(g)[n].toLowerCase())}’ en ziet alleen ${g.edition==="draw"?"de stippen aan de vouw":"het laatste woord"}.`)}</p>
+    <button class="solid wide" onclick="go('turn')">${T("I'm the next player","Ik ben de volgende speler")}</button>
   </div>`;
 }
 
 function shareMsg(g){
   const done=g.turns.length, part=partNames(g)[done]?.toLowerCase();
   return g.edition==="draw"
-    ? `I just drew part ${done} of an exquisite corpse. Can you draw the ${part} without seeing the rest?`
-    : `I wrote part ${done} of an exquisite corpse sentence. Can you write the next line blind?`;
+    ? T(`I just drew part ${done} of an exquisite corpse. Can you draw the ${part} without seeing the rest?`,`Ik tekende net deel ${done} van een cadavre exquis. Teken jij het deel ‘${part}’ zonder de rest te zien?`)
+    : T(`I wrote part ${done} of an exquisite corpse sentence. Can you write the next line blind?`,`Ik schreef deel ${done} van een cadavre-exquiszin. Schrijf jij blind de volgende regel?`);
 }
 const shareText = g => shareMsg(g)+" "+gameLink(g);
-const revealMsg = g => g.edition==="draw" ? "Our exquisite corpse is finished. Unfold it:" : "Our exquisite corpse sentence is finished. Read it:";
+const revealMsg = g => g.edition==="draw" ? T("Our exquisite corpse is finished. Unfold it:","Onze cadavre exquis is klaar. Vouw hem open:") : T("Our exquisite corpse sentence is finished. Read it:","Onze cadavre-exquiszin is klaar. Lees hem:");
 function sent(){
   const g=S.game, link=gameLink(g);
   return `<div class="fold-ill"><i></i><i></i></div>
-  <div class="stack" style="gap:4px"><span class="lab">Folded · ${g.turns.length} of ${g.parts} parts done</span>
-  <h2>Now send it to the next player</h2></div>
-  <p>They will only see ${g.edition==="draw"?"the dots where your lines cross the fold":"your last word"}. Whoever adds the last part gets the reveal and can send it back to everyone.</p>
+  <div class="stack" style="gap:4px"><span class="lab">${T("Folded","Gevouwen")} · ${g.turns.length} ${T("of","van")} ${g.parts} ${T("parts done","delen klaar")}</span>
+  <h2>${T("Now send it to the next player","Stuur het nu naar de volgende speler")}</h2></div>
+  <p>${T(`They will only see ${g.edition==="draw"?"the dots where your lines cross the fold":"your last word"}. Whoever adds the last part gets the reveal and can send it back to everyone.`,`Die ziet alleen ${g.edition==="draw"?"de stippen waar jouw lijnen de vouw kruisen":"jouw laatste woord"}. Wie het laatste deel toevoegt, krijgt de onthulling en kan ze naar iedereen terugsturen.`)}</p>
   <div class="stack">
-    ${navigator.share?`<button class="solid wide" onclick="shareLink(shareText(S.game),this)">Share with the next player…</button><span class="lab">Or pick an app</span>`:`<span class="lab">Send it with</span>`}
-    ${shareGrid(shareMsg(g), link, "Your turn: exquisite corpse")}
+    ${navigator.share?`<button class="solid wide" onclick="shareLink(shareText(S.game),this)">${T("Share with the next player…","Deel met de volgende speler…")}</button><span class="lab">${T("Or pick an app","Of kies een app")}</span>`:`<span class="lab">${T("Send it with","Stuur het met")}</span>`}
+    ${shareGrid(shareMsg(g), link, T("Your turn: exquisite corpse","Jouw beurt: cadavre exquis"))}
   </div>
-  <button class="solid wide" onclick="sentIt()">I've sent it</button>
-  <button class="ghost" onclick="location.hash='';go('home')">Back to start</button>`;
+  <button class="solid wide" onclick="sentIt()">${T("I've sent it","Ik heb het verstuurd")}</button>
+  <button class="ghost" onclick="location.hash='';go('home')">${T("Back to start","Terug naar start")}</button>`;
 }
 
 // ---------- waiting screen: a paper that folds itself while the others play ----------
-const QUIPS=["Folding the paper…","Someone is drawing a nose. Probably.","No peeking.","Sharpening the pencil…","Breton would be proud.","The corpse is getting exquisite…","Hiding your part under the fold…","Waiting for the next genius…"];
+const QUIPS_L={en:["Folding the paper…","Someone is drawing a nose. Probably.","No peeking.","Sharpening the pencil…","Breton would be proud.","The corpse is getting exquisite…","Hiding your part under the fold…","Waiting for the next genius…"],
+  nl:["Het papier wordt gevouwen…","Iemand tekent een neus. Waarschijnlijk.","Niet spieken.","Het potlood wordt geslepen…","Breton zou trots zijn.","Het lijk wordt steeds exquiser…","Jouw deel verdwijnt onder de vouw…","Wachten op het volgende genie…"]};
+const QUIPS=new Proxy([], {get:(_,k)=>QUIPS_L[LANG][k]});
 function waiting(){
   const g=S.game, left=g.parts-g.turns.length;
   const band=(d,eye)=>`<svg viewBox="0 0 150 62" aria-hidden="true"><path d="${d}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>${eye?`<ellipse class="eye" cx="75" cy="30" rx="9" ry="6" fill="none" stroke="currentColor" stroke-width="2"/><circle class="eye" cx="77" cy="30" r="2.4" fill="currentColor"/>`:""}</svg>`;
@@ -707,9 +726,9 @@ function waiting(){
       <div class="lb b2"><div class="back"></div>${band("M50 62 C40 40 60 25 70 15 C80 25 100 40 100 62 M45 40 L25 30 M105 40 L125 28")}
         <div class="lb b1"><div class="back"></div>${band("M45 62 C30 30 50 6 75 6 C100 6 120 30 105 62",true)}</div></div></div></div>
   <p class="quip" id="quip">${QUIPS[0]}</p>
-  <div class="stack" style="gap:6px;text-align:center"><span class="lab" id="left">${left} more ${left===1?"player":"players"} to go</span>
-  <p class="muted" id="waitnote">${hasDB()?"Keep this page open and the reveal appears here. You can also come back later: your games are listed on the start screen.":"The last player gets the reveal. Ask them to send it back to you."}</p></div>
-  <button class="ghost" onclick="location.hash='';go('home')">Start a new game while you wait</button>`;
+  <div class="stack" style="gap:6px;text-align:center"><span class="lab" id="left">${T(`${left} more ${left===1?"player":"players"} to go`,`Nog ${left} ${left===1?"speler":"spelers"}`)}</span>
+  <p class="muted" id="waitnote">${hasDB()?T("Keep this page open and the reveal appears here. You can also come back later: your games are listed on the start screen.","Laat deze pagina open, dan verschijnt de onthulling hier. Je kan ook later terugkomen: je spellen staan op het startscherm."):T("The last player gets the reveal. Ask them to send it back to you.","De laatste speler krijgt de onthulling. Vraag om ze naar jou terug te sturen.")}</p></div>
+  <button class="ghost" onclick="location.hash='';go('home')">${T("Start a new game while you wait","Begin een nieuw spel terwijl je wacht")}</button>`;
 }
 let quipT=null;
 let pollT=null;
@@ -719,17 +738,17 @@ function pollReveal(){
   const tick=async()=>{
     if(S.screen!=="waiting"||S.game!==g) return;
     const n=await dbCount(g.id).catch(()=>null);
-    if(n!==null){ const left=g.parts-n, el=$("#left"); if(el) el.textContent=left>0?`${left} more ${left===1?"player":"players"} to go`:"Everyone is done";
+    if(n!==null){ const left=g.parts-n, el=$("#left"); if(el) el.textContent=left>0?T(`${left} more ${left===1?"player":"players"} to go`,`Nog ${left} ${left===1?"speler":"spelers"}`):T("Everyone is done","Iedereen is klaar");
       if(left<=0){ return revealReady(g); } }
     pollT=setTimeout(tick, document.hidden?20000:6000);
   };
   pollT=setTimeout(tick,4000);
 }
 function revealReady(g){
-  document.title="● Reveal ready · Exquisite Corpse";
-  try{ if(window.Notification && Notification.permission==="granted") new Notification("Your exquisite corpse is finished",{body:"Tap to unfold the reveal."}).onclick=()=>{ focus(); openGame(g.id); }; }catch(e){}
-  const q=$("#quip"); if(q){ clearInterval(quipT); q.textContent="It's finished."; }
-  const note=$("#waitnote"); if(note) note.innerHTML=`<button class="solid wide" onclick="openGame('${g.id}')">Unfold the reveal</button>`;
+  document.title=T("● Reveal ready · Exquisite Corpse","● Klaar om te onthullen · Cadavre exquis");
+  try{ if(window.Notification && Notification.permission==="granted") new Notification(T("Your exquisite corpse is finished","Je cadavre exquis is klaar"),{body:T("Tap to unfold the reveal.","Tik om open te vouwen.")}).onclick=()=>{ focus(); openGame(g.id); }; }catch(e){}
+  const q=$("#quip"); if(q){ clearInterval(quipT); q.textContent=T("It's finished.","Het is klaar."); }
+  const note=$("#waitnote"); if(note) note.innerHTML=`<button class="solid wide" onclick="openGame('${g.id}')">${T("Unfold the reveal","Vouw open")}</button>`;
 }
 function sentIt(){
   try{ if(hasDB() && window.Notification && Notification.permission==="default") Notification.requestPermission(); }catch(e){}
@@ -741,31 +760,31 @@ function join(){
   const g=S.game, n=g.turns.length, names=partNames(g);
   const who=g.turns.map(t=>t.name).filter(Boolean);
   return `<div class="fold-ill"><i></i><i></i></div>
-  <span class="lab">${g.edition==="draw"?"Drawing":"Words"}</span>
-  <h2>${who.length?esc(who.join(", "))+" folded":"Someone folded"} this paper for you</h2>
-  <p>You're adding part ${n+1} of ${g.parts}: the <b>${esc(names[n].toLowerCase())}</b>. You won't see what came before, only ${g.edition==="draw"?"the dots at the fold":"the last word"}.</p>
-  <button class="solid wide" onclick="S.draft=null;go('turn')">Unfold my part</button>`;
+  <span class="lab">${g.edition==="draw"?T("Drawing","Tekenen"):T("Words","Woorden")}</span>
+  <h2>${T(`${who.length?esc(who.join(", "))+" folded":"Someone folded"} this paper for you`,`${who.length?esc(who.join(", "))+" vouwde":"Iemand vouwde"} dit papier voor jou`)}</h2>
+  <p>${T(`You're adding part ${n+1} of ${g.parts}: the <b>${esc(names[n].toLowerCase())}</b>. You won't see what came before, only ${g.edition==="draw"?"the dots at the fold":"the last word"}.`,`Jij voegt deel ${n+1} van ${g.parts} toe: <b>${esc(names[n].toLowerCase())}</b>. Je ziet niet wat ervoor kwam, alleen ${g.edition==="draw"?"de stippen aan de vouw":"het laatste woord"}.`)}</p>
+  <button class="solid wide" onclick="S.draft=null;go('turn')">${T("Unfold my part","Open mijn deel")}</button>`;
 }
 
 function reveal(){
-  const g=S.game, who=g.turns.map((t,i)=>t.name||("Player "+(i+1)));
+  const g=S.game, who=g.turns.map((t,i)=>t.name||(T("Player ","Speler ")+(i+1)));
   const body = g.edition==="draw"
     ? g.turns.map((t,i)=>`<div class="sec"><canvas data-i="${i}"></canvas></div>`).join("")
     : g.turns.map(t=>`<div class="sec wsec">${esc(t.text)}</div>`).join("");
   const ex=S.mode==="wall";
-  return `${ex?`<button class="ghost chip" style="align-self:flex-start;padding-left:0" onclick="go('home');setTimeout(()=>$('#wall-top')?.scrollIntoView(),400)">← Back to the wall</button>`:""}
-  <div class="stack" style="gap:4px"><span class="lab">${ex?"From the wall":"Unfolded"}</span><h2>The reveal</h2></div>
+  return `${ex?`<button class="ghost chip" style="align-self:flex-start;padding-left:0" onclick="go('home');setTimeout(()=>$('#wall-top')?.scrollIntoView(),400)">← ${T("Back to the wall","Terug naar de muur")}</button>`:""}
+  <div class="stack" style="gap:4px"><span class="lab">${ex?T("From the wall","Van de muur"):T("Unfolded","Opengevouwen")}</span><h2>${T("The reveal","De onthulling")}</h2></div>
   <div class="reveal" id="rv">${body}</div>
   <div class="credits">${who.map((w,i)=>`<span>${esc(partNames(g)[i])} · ${esc(w)}</span>`).join("")}</div>
   ${g.edition==="words"?aiBlock(g, ex):""}
   <div class="stack">
-    ${hasDB()&&!ex?`<button class="solid wide" ${g.onWall?"disabled":""} onclick="publishToWall(this)">${g.onWall?"On the wall":"Publish to wall"}</button>`:""}
-    <button class="${hasDB()&&!ex?"":"solid "}wide" onclick="saveImage(this)">Save image</button>
-    ${g.edition==="words"?`<button class="wide" onclick="copy(wordsText(S.game),this)">Copy the sentence</button>`:""}
-    ${S.mode==="remote"||ex?`<div class="stack"><span class="lab">${ex?"Share it":"Send the reveal to everyone"}</span>
-      ${navigator.share?`<button class="wide" onclick="revealShare(this)">Share…</button>`:""}
-      ${shareGrid(revealMsg(g), LINK, "Our exquisite corpse is finished")}</div>`:""}
-    <button class="ghost wide" onclick="location.hash='';S.game=null;go('home')">${ex?"Make your own":"Play again"}</button>
+    ${hasDB()&&!ex?`<button class="solid wide" ${g.onWall?"disabled":""} onclick="publishToWall(this)">${g.onWall?T("On the wall","Op de muur"):T("Publish to wall","Op de muur zetten")}</button>`:""}
+    <button class="${hasDB()&&!ex?"":"solid "}wide" onclick="saveImage(this)">${T("Save image","Bewaar afbeelding")}</button>
+    ${g.edition==="words"?`<button class="wide" onclick="copy(wordsText(S.game),this)">${T("Copy the sentence","Kopieer de zin")}</button>`:""}
+    ${S.mode==="remote"||ex?`<div class="stack"><span class="lab">${ex?T("Share it","Deel het"):T("Send the reveal to everyone","Stuur de onthulling naar iedereen")}</span>
+      ${navigator.share?`<button class="wide" onclick="revealShare(this)">${T("Share…","Delen…")}</button>`:""}
+      ${shareGrid(revealMsg(g), LINK, T("Our exquisite corpse is finished","Onze cadavre exquis is klaar"))}</div>`:""}
+    <button class="ghost wide" onclick="location.hash='';S.game=null;go('home')">${ex?T("Make your own","Maak je eigen"):T("Play again","Opnieuw spelen")}</button>
   </div>`;
 }
 after.reveal=()=>{
@@ -820,7 +839,7 @@ const wordsText = g => g.turns.map(t=>t.text).join(" ").replace(/\s+/g," ").trim
 
 async function composeImage(){
   await document.fonts?.ready;
-  const g=S.game, M=70, names=g.turns.map((t,i)=>t.name||("Player "+(i+1)));
+  const g=S.game, M=70, names=g.turns.map((t,i)=>t.name||(T("Player ","Speler ")+(i+1)));
   const c=document.createElement("canvas"); const x=c.getContext("2d");
   if(g.edition==="draw"){
     c.width=W+M*2; c.height=H*g.parts+M*2+60;
@@ -834,7 +853,7 @@ async function composeImage(){
     lines.forEach((l,i)=>x.fillText(l,M,M+60+i*80));
   }
   x.fillStyle="#6f83b3"; x.font="500 20px 'Geist Mono', monospace";
-  x.fillText(("EXQUISITE CORPSE · "+(g.edition==="draw"&&g.tags?g.theme+" · ":"")+names.join(", ")).toUpperCase(), M, c.height-M+10);
+  x.fillText((T("EXQUISITE CORPSE · ","CADAVRE EXQUIS · ")+(g.edition==="draw"&&g.tags?g.theme+" · ":"")+names.join(", ")).toUpperCase(), M, c.height-M+10);
   return new Promise(r=>c.toBlob(r,"image/png"));
 }
 async function saveImage(btn){
@@ -844,7 +863,7 @@ async function saveImage(btn){
     const file=new File([blob],"exquisite-corpse.png",{type:"image/png"});
     if(navigator.canShare?.({files:[file]})){ try{ await navigator.share({files:[file]}); }catch(e){} }
     else { const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=file.name; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),4000); }
-  }catch(e){ toast("The image was not saved."); }
+  }catch(e){ toast(T("The image was not saved.","De afbeelding is niet bewaard.")); }
   btn.disabled=false;
 }
 
@@ -852,11 +871,12 @@ async function revealShare(btn){
   const g=S.game; if(!LINK) await makeLink(g);
   shareLink(revealMsg(g)+" "+LINK, btn);
 }
-function applyTheme(t){ document.documentElement.dataset.theme=t; const b=$("#mode"); if(b) b.setAttribute("aria-label", t==="dark"?"Switch to light mode":"Switch to dark mode");
+function applyTheme(t){ document.documentElement.dataset.theme=t; const b=$("#mode"); if(b) b.setAttribute("aria-label", t==="dark"?T("Switch to light mode","Naar lichte modus"):T("Switch to dark mode","Naar donkere modus"));
   document.querySelector('meta[name="theme-color"]')?.setAttribute("content", t==="dark"?"#0047ab":"#f4f6fb"); }
 function toggleTheme(){ const t=document.documentElement.dataset.theme==="dark"?"light":"dark"; store.set("ec-theme",t); applyTheme(t);
   if(S.screen==="turn") pad?.redraw();
   if(S.screen==="home") loadWall(); if(S.screen==="reveal") render(); }
+applyLang();
 applyTheme(store.get("ec-theme") || (matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"));
 render();
 routeHash();
