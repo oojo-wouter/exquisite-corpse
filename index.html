@@ -127,6 +127,12 @@ a.btn{display:flex;align-items:center;justify-content:center;text-decoration:non
 @keyframes blink{0%,90%,100%{transform:scaleY(1)}95%{transform:scaleY(.1)}}
 .quip{font-family:var(--display);font-style:italic;font-size:26px;text-align:center;min-height:2.3em;transition:opacity .3s}
 @media (prefers-reduced-motion: reduce){.lb.b1,.lb.b2,.eye{animation:none}}
+.pens{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.pen{width:34px;height:34px;min-height:34px;padding:0;border:1.5px solid transparent;border-radius:50%;display:grid;place-items:center;background:transparent}
+.pen i{display:block;border-radius:50%;background:var(--ink)}
+.pen.sw i{width:18px;height:18px;box-shadow:inset 0 0 0 1px rgba(127,127,127,.35)}
+.pen[aria-pressed="true"]{border-color:var(--ink)}
+.pensep{width:1px;height:22px;background:var(--line);margin-inline:2px}
 .howto{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;counter-reset:st}
 .howto div{border-top:1.5px solid var(--ink);padding-top:8px;font-size:13px;line-height:1.35;min-width:0}
 .howto div::before{counter-increment:st;content:counter(st);display:block;font-family:var(--display);font-size:28px;line-height:1}
@@ -200,10 +206,13 @@ const $ = s => document.querySelector(s);
 const rnd = n => Math.floor(Math.random()*n);
 const pick = (arr,n) => { const a=[...arr]; for(let i=a.length-1;i>0;i--){const j=rnd(i+1);[a[i],a[j]]=[a[j],a[i]];} return a.slice(0,n); };
 const esc = s => String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const enc = strokes => strokes.map(s=>s.map(Math.round).join(",")).join("|");
-const dec = str => !str ? [] : str.split("|").map(s=>s.split(",").map(Number));
+// stroke style code = width*10 + colour (10 = medium, ink). Stored as "12:x,y,x,y" when not the default.
+const PEN_W=[4,9,18], PEN_C=["ink","#e63946","#ff8c1a","#f2c400","#2a9d8f","#2f6fde","#9b5de5"];
+const enc = (strokes,st) => strokes.map((s,i)=>(st&&st[i]!=null&&st[i]!==10?st[i]+":":"")+s.map(Math.round).join(",")).join("|");
+function decS(str){ const strokes=[], st=[]; if(str) for(const part of str.split("|")){ const k=part.indexOf(":"); st.push(k>0?+part.slice(0,k):10); strokes.push((k>0?part.slice(k+1):part).split(",").map(Number)); } return {strokes,st}; }
+const dec = str => decS(str).strokes;
 let toastT;
-function toast(msg){ const t=$("#toast"); t.textContent=msg; t.hidden=false; clearTimeout(toastT); toastT=setTimeout(()=>t.hidden=true,2200); }
+function toast(msg,ms=2200){ const t=$("#toast"); t.textContent=msg; t.hidden=false; clearTimeout(toastT); toastT=setTimeout(()=>t.hidden=true,ms); }
 async function copy(text, btn){
   try{ await navigator.clipboard.writeText(text); toast("Copied"); }
   catch(e){ const box=btn?.closest(".stack")?.querySelector(".linkbox"); if(box){ const r=document.createRange(); r.selectNodeContents(box); const s=getSelection(); s.removeAllRanges(); s.addRange(r);} toast("Select the text and copy it"); }
@@ -265,10 +274,11 @@ function paint(ctx, strokes, opts={}){
   if(opts.dots){ ctx.fillStyle=INK; for(const d of opts.dots){ ctx.beginPath(); ctx.arc(d.x,10,11,0,7); ctx.fill(); } }
   if(opts.start){ ctx.fillStyle=INK; for(const p of opts.start){ ctx.beginPath(); ctx.arc(p[0],p[1],7,0,7); ctx.fill(); } }
   if(opts.pencil) return pencil(ctx, strokes);
-  ctx.strokeStyle=INK; ctx.lineWidth=LW; ctx.lineCap="round"; ctx.lineJoin="round";
-  for(const s of strokes){
+  ctx.lineCap="round"; ctx.lineJoin="round";
+  for(let si=0; si<strokes.length; si++){ const s=strokes[si], code=opts.st?.[si]??10, lw=PEN_W[Math.floor(code/10)]??LW, cc=PEN_C[code%10]??"ink";
+    ctx.strokeStyle=ctx.fillStyle=cc==="ink"?INK:cc; ctx.lineWidth=lw;
     ctx.beginPath();
-    if(s.length<=2){ ctx.arc(s[0],s[1],LW/2,0,7); ctx.fillStyle=INK; ctx.fill(); continue; }
+    if(s.length<=2){ ctx.arc(s[0],s[1],lw/2,0,7); ctx.fill(); continue; }
     ctx.moveTo(s[0],s[1]);
     for(let i=2;i<s.length-2;i+=2){ const mx=(s[i]+s[i+2])/2, my=(s[i+1]+s[i+3])/2; ctx.quadraticCurveTo(s[i],s[i+1],mx,my); }
     ctx.lineTo(s[s.length-2],s[s.length-1]); ctx.stroke();
@@ -291,17 +301,26 @@ function pencil(ctx, strokes){
   }
   ctx.globalAlpha=1;
 }
+let PEN={w:+store.get("ec-pen-w")||1, c:+store.get("ec-pen-c")||0};
+const penCode=()=>PEN.w*10+PEN.c;
+function setPen(k,v){ PEN[k]=v; store.set("ec-pen-"+k,String(v)); document.querySelectorAll(`[data-pen-${k}]`).forEach(b=>b.setAttribute("aria-pressed",+b.dataset["pen"+k.toUpperCase()]===v)); }
+function penBar(){
+  const sizes=["Fine","Medium","Thick"].map((n,i)=>`<button class="pen" data-pen-w="${i}" aria-pressed="${PEN.w===i}" aria-label="${n} line" title="${n}" onclick="setPen('w',${i})"><i style="width:${[5,9,15][i]}px;height:${[5,9,15][i]}px"></i></button>`).join("");
+  const cols=PEN_C.map((c,i)=>`<button class="pen sw" data-pen-c="${i}" aria-pressed="${PEN.c===i}" aria-label="${i?"Colour "+c:"Black"}" onclick="setPen('c',${i})"><i style="background:${c==="ink"?"var(--ink)":c}"></i></button>`).join("");
+  return `<div class="pens"><div class="row" style="gap:2px">${sizes}</div><span class="pensep"></span><div class="row" style="gap:2px">${cols}</div></div>`;
+}
 function sizeCanvas(c){ const r=c.getBoundingClientRect(), d=Math.min(window.devicePixelRatio||1,3); c.width=Math.round(r.width*d); c.height=Math.round(r.width*d*H/W); }
 
 function mountPad(canvas, strokes, opts){
   const ctx=canvas.getContext("2d"); let cur=null, raf=0;
-  const redraw=()=>{ raf=0; paint(ctx, cur?[...strokes,cur]:strokes, opts); };
+  const st=opts.st||[];
+  const redraw=()=>{ raf=0; paint(ctx, cur?[...strokes,cur]:strokes, {...opts, st:cur?[...st,penCode()]:st}); };
   const req=()=>{ if(!raf) raf=requestAnimationFrame(redraw); };
   const pos=e=>{ const r=canvas.getBoundingClientRect(); return [ (e.clientX-r.left)/r.width*W, (e.clientY-r.top)/r.height*H ]; };
   canvas.addEventListener("pointerdown",e=>{ if(cur) return; canvas.setPointerCapture(e.pointerId); cur=pos(e); req(); e.preventDefault(); });
   canvas.addEventListener("pointermove",e=>{ if(!cur) return; const evs=e.getCoalescedEvents?e.getCoalescedEvents():[e];
     for(const ev of evs){ const [x,y]=pos(ev); const lx=cur[cur.length-2], ly=cur[cur.length-1]; if(Math.hypot(x-lx,y-ly)>3) cur.push(Math.max(0,Math.min(W,x)),Math.max(0,Math.min(H,y))); } req(); });
-  const end=()=>{ if(!cur) return; strokes.push(cur); cur=null; req(); opts.onChange?.(); persist(); };
+  const end=()=>{ if(!cur) return; strokes.push(cur); st.push(penCode()); cur=null; req(); opts.onChange?.(); persist(); };
   canvas.addEventListener("pointerup",end); canvas.addEventListener("pointercancel",end);
   new ResizeObserver(()=>{ sizeCanvas(canvas); redraw(); }).observe(canvas);
   return { redraw:req };
@@ -340,17 +359,18 @@ const SB = { url:"https://cxmxqowmlbxchnnlhyrf.supabase.co", key:"sb_publishable
 const hasDB = () => !!(SB.url && SB.key);
 async function api(path, opts={}){
   const r=await fetch(SB.url.replace(/\/$/,"")+"/rest/v1/"+path,{...opts,headers:{apikey:SB.key,...(SB.key.startsWith("sb_")?{}:{Authorization:"Bearer "+SB.key}),"Content-Type":"application/json",Prefer:"return=minimal",...(opts.headers||{})}});
-  if(!r.ok){ const e=new Error("db "+r.status); e.status=r.status; throw e; }
+  if(!r.ok){ let m=""; try{ const j=await r.json(); m=j.message||j.hint||j.details||""; }catch(_){}
+    const e=new Error(m||("error "+r.status)); e.status=r.status; console.warn("database",path.split("?")[0],r.status,m); throw e; }
   const txt=await r.text(); return txt?JSON.parse(txt):null;
 }
 const newId=()=>Array.from(crypto.getRandomValues(new Uint8Array(8)),b=>"abcdefghijkmnpqrstuvwxyz23456789"[b%32]).join("");
 const startStr = g => g.start.map(p=>p.map(Math.round).join(",")).join("|");
-const turnRow = (g,n,t) => ({game_id:g.id, n, strokes:g.edition==="draw"?enc(t.strokes||[]):"", text:t.text||"", name:t.name||""});
+const turnRow = (g,n,t) => ({game_id:g.id, n, strokes:g.edition==="draw"?enc(t.strokes||[],t.st):"", text:t.text||"", name:t.name||""});
 const dbCreate = g => api("games",{method:"POST",body:JSON.stringify({id:g.id,edition:g.edition,parts:g.parts,start:startStr(g)})});
 const dbTurn = (g,n,t) => api("turns",{method:"POST",body:JSON.stringify(turnRow(g,n,t))});
 const dbCount = async id => (await api(`turns?game_id=eq.${id}&select=n`)).length;
 function rowToGame(r, id){
-  const turns=[...(r.turns||[])].sort((a,b)=>a.n-b.n).map(t=>r.edition==="draw"?{strokes:dec(t.strokes),name:t.name}:{text:t.text,name:t.name});
+  const turns=[...(r.turns||[])].sort((a,b)=>a.n-b.n).map(t=>r.edition==="draw"?{...decS(t.strokes),name:t.name}:{text:t.text,name:t.name});
   return { id, edition:r.edition, parts:r.parts, theme:"", start:r.start?r.start.split("|").map(p=>p.split(",").map(Number)):[], turns };
 }
 async function dbLoad(id){ const a=await api(`games?id=eq.${id}&select=edition,parts,start,turns(n,strokes,text,name)`); return a&&a[0]?rowToGame(a[0],id):null; }
@@ -361,7 +381,7 @@ async function publishToWall(btn){
     if(!g.inDB){ g.id=newId(); await dbCreate(g); await api("turns",{method:"POST",body:JSON.stringify(g.turns.map((t,n)=>turnRow(g,n,t)))}); g.inDB=true; }
     try{ await api("wall",{method:"POST",body:JSON.stringify({game_id:g.id})}); }catch(e){ if(e.status!==409) throw e; }
     g.onWall=true; btn.textContent="On the wall"; toast("Published to the wall");
-  }catch(e){ btn.disabled=false; btn.textContent="Publish to wall"; toast("Could not publish. Check your connection and try again."); }
+  }catch(e){ btn.disabled=false; btn.textContent="Publish to wall"; toast("Could not publish ("+(e.status||"no connection")+"): "+(e.message||e), 9000); }
 }
 // games this person started or added to, so they can come back for the reveal
 const mine = { all(){ try{ return JSON.parse(store.get("ec-mine")||"[]"); }catch(e){ return []; } },
@@ -381,7 +401,7 @@ async function loadWall(){
   w.innerHTML=WALL.map((e,i)=>`<button onclick="openWall(${i})" aria-label="Open piece ${i+1}">
     ${e.edition==="draw"? e.turns.map((t,j)=>`<canvas data-ex="${i}" data-p="${j}"></canvas>`).join("") : `<div class="wq">${e.turns.map(t=>esc(t.text)).join(" ")}</div>`}
     <div class="tg">${esc(e.turns.map(t=>t.name).filter(Boolean).join(" · ")||(e.edition==="draw"?"Drawing":"Words"))}</div></button>`).join("");
-  w.querySelectorAll("canvas").forEach(c=>{ sizeCanvas(c); paint(c.getContext("2d"), WALL[+c.dataset.ex].turns[+c.dataset.p].strokes, {start:+c.dataset.p===0?WALL[+c.dataset.ex].start:null}); });
+  w.querySelectorAll("canvas").forEach(c=>{ sizeCanvas(c); paint(c.getContext("2d"), WALL[+c.dataset.ex].turns[+c.dataset.p].strokes, {st:WALL[+c.dataset.ex].turns[+c.dataset.p].st, start:+c.dataset.p===0?WALL[+c.dataset.ex].start:null}); });
 }
 function openWall(i){ S.mode="wall"; S.game={...WALL[i],inDB:true}; LINK=location.origin+location.pathname+"#g-"+S.game.id; go("reveal"); }
 async function yourGames(){
@@ -399,7 +419,7 @@ const b64u = bytes => btoa(String.fromCharCode(...bytes)).replace(/\+/g,"-").rep
 const unb64u = str => Uint8Array.from(atob(str.replace(/-/g,"+").replace(/_/g,"/")), c=>c.charCodeAt(0));
 async function pipe(bytes, stream){ const out=await new Response(new Blob([bytes]).stream().pipeThrough(stream)).arrayBuffer(); return new Uint8Array(out); }
 async function packGame(g){
-  const o={v:1,e:g.edition[0],t:g.theme,n:g.parts,s:g.start.map(p=>p.map(Math.round).join(",")).join("|"),p:g.turns.map(t=>g.edition==="draw"?[enc(t.strokes),t.name||""]:[t.text,t.name||""])};
+  const o={v:1,e:g.edition[0],t:g.theme,n:g.parts,s:g.start.map(p=>p.map(Math.round).join(",")).join("|"),p:g.turns.map(t=>g.edition==="draw"?[enc(t.strokes,t.st),t.name||""]:[t.text,t.name||""])};
   const raw=new TextEncoder().encode(JSON.stringify(o));
   try{ return "z"+b64u(await pipe(raw,new CompressionStream("deflate-raw"))); }catch(e){ return "j"+b64u(raw); }
 }
@@ -409,7 +429,7 @@ async function unpackGame(str){
   const o=JSON.parse(new TextDecoder().decode(raw)), draw=o.e==="d";
   if(![3,4].includes(o.n)) throw new Error("bad game");
   return { id:"link", edition:draw?"draw":"words", theme:o.t, parts:o.n, start:o.s?o.s.split("|").map(p=>p.split(",").map(Number)):[],
-    turns:o.p.slice(0,o.n).map(([a,name])=>draw?{strokes:dec(a),name:String(name).slice(0,24)}:{text:String(a).slice(0,70),name:String(name).slice(0,24)}) };
+    turns:o.p.slice(0,o.n).map(([a,name])=>draw?{...decS(a),name:String(name).slice(0,24)}:{text:String(a).slice(0,70),name:String(name).slice(0,24)}) };
 }
 let LINK="";
 const gameLink = () => LINK;
@@ -509,7 +529,7 @@ async function startRemote(){
 function turn(){
   const g=S.game, n=g.turns.length, names=partNames(g), last=n===g.parts-1;
   const t=THEMES[g.theme]||THEMES["Dream zoo"];
-  if(!S.draft) S.draft={strokes:[], text:"", name:store.get("ec-name"), kws: g.edition==="draw"? pick(t.nouns,4) : kwFor(n,t)};
+  if(!S.draft) S.draft={strokes:[], st:[], text:"", name:store.get("ec-name"), kws: g.edition==="draw"? pick(t.nouns,4) : kwFor(n,t)};
   const d=S.draft;
   const top=`<div class="topbar"><span class="lab">${g.edition==="draw"?"Drawing":"Words"}</span><div class="row" style="gap:2px"><button class="ghost chip" onclick="openCheat()">Cheat</button>${confirmBtn("quit","Quit","Quit game?","ghost chip","quitGame()")}</div></div>`;
   const prog=top+`<div class="progress">${Array.from({length:g.parts},(_,i)=>`<i class="${i<=n?"on":""}"></i>`).join("")}</div>`;
@@ -522,6 +542,7 @@ function turn(){
     return `${prog}
     <div class="stack" style="gap:4px"><span class="lab">Part ${n+1} of ${g.parts}</span><h2>${names[n]}</h2></div>
     <p>${intro}${last?"":" Carry some lines down past the fold."}</p>
+    ${penBar()}
     <div class="sheet"><canvas id="pad"></canvas></div>
     <div class="tools"><div class="row"><button onclick="undo()">Undo</button>${confirmBtn("clear","Clear","Clear all?","ghost","clearPad()")}</div>
       <span class="foldnote" id="cnt"></span></div>
@@ -546,13 +567,14 @@ let pad=null;
 after.turn=()=>{
   const g=S.game, n=g.turns.length;
   if(g.edition!=="draw"){ return; }
-  const opts={ guides:true, last:n===g.parts-1, start:n===0?g.start:null, dots:n>0?foldDots(g.turns[n-1].strokes):null, onChange:updCount };
+  S.draft.st ||= S.draft.strokes.map(()=>10);
+  const opts={ guides:true, last:n===g.parts-1, start:n===0?g.start:null, dots:n>0?foldDots(g.turns[n-1].strokes):null, onChange:updCount, st:S.draft.st };
   pad=mountPad($("#pad"), S.draft.strokes, opts); updCount();
 };
 function updCount(){ const c=$("#cnt"); if(!c) return; const g=S.game, n=g.turns.length; if(n===g.parts-1){ c.textContent=""; $("#done").disabled=!S.draft.strokes.length; return; }
   const k=S.draft.strokes.filter(s=>s.some((v,i)=>i%2&&v>=FOLD-10)).length; c.textContent=k+" line"+(k===1?"":"s")+" at the fold"; $("#done").disabled=!S.draft.strokes.length; }
-function undo(){ S.draft.strokes.pop(); pad?.redraw(); updCount(); persist(); }
-function clearPad(){ S.draft.strokes.length=0; pad?.redraw(); updCount(); persist(); toast('Cleared'); }
+function undo(){ S.draft.strokes.pop(); S.draft.st?.pop(); pad?.redraw(); updCount(); persist(); }
+function clearPad(){ S.draft.strokes.length=0; if(S.draft.st) S.draft.st.length=0; pad?.redraw(); updCount(); persist(); toast('Cleared'); }
 function reshuffle(){ const g=S.game, t=THEMES[g.theme]; S.draft.kws = g.edition==="draw"? pick(t.nouns,4) : kwFor(g.turns.length,t); render(); }
 function useKw(k){
   if(S.game.edition==="draw"){ toast("Draw a "+k.toLowerCase()); return; }
@@ -560,13 +582,13 @@ function useKw(k){
 }
 async function finishTurn(){
   const g=S.game, d=S.draft, n=g.turns.length;
-  const t={strokes:d.strokes, text:d.text.trim(), name:(d.name||"").trim()};
+  const t={strokes:d.strokes, st:d.st||[], text:d.text.trim(), name:(d.name||"").trim()};
   if(t.name) store.set("ec-name", t.name);
   if(S.mode==="remote" && hasDB()){
     $("#done").disabled=true;
     try{ if(n===0){ g.id=newId(); await dbCreate(g); } await dbTurn(g,n,t); }
     catch(e){ if(e.status===409){ toast("Someone already added this part. Loading the latest version."); return routeHash(); }
-      toast("Could not save. Check your connection and try again."); $("#done").disabled=false; return; }
+      toast("Could not save ("+(e.status||"no connection")+"): "+(e.message||e), 9000); $("#done").disabled=false; return; }
     g.inDB=true; g.turns.push(t); S.draft=null; mine.add(g);
     LINK=location.origin+location.pathname+"#g-"+g.id; history.replaceState(null,"",location.pathname);
   } else if(S.mode==="remote"){
@@ -683,7 +705,7 @@ after.reveal=()=>{
   const g=S.game;
   const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
   const canv=[...document.querySelectorAll("#rv canvas")];
-  const draw=(c,t)=>{ const i=+c.dataset.i; paint(c.getContext("2d"), partial(g.turns[i].strokes,t), {start:i===0?g.start:null, pencil:g.pencil}); };
+  const draw=(c,t)=>{ const i=+c.dataset.i; paint(c.getContext("2d"), partial(g.turns[i].strokes,t), {st:g.turns[i].st, start:i===0?g.start:null, pencil:g.pencil}); };
   canv.forEach(c=>{ sizeCanvas(c); draw(c, reduce?1:0); });
   const secs=[...document.querySelectorAll("#rv .sec")];
   secs.forEach((s,i)=>{
@@ -709,7 +731,7 @@ function build3d(){
       if(g.edition==="draw"){
         const c=document.createElement("canvas"); c.width=600; c.height=420; if(k) c.className="cp";
         c.style.transform=`translateZ(${z}px)`; pb.appendChild(c);
-        paint(c.getContext("2d"), t.strokes, {clear:true, start:i===0?g.start:null, pencil:g.pencil});
+        paint(c.getContext("2d"), t.strokes, {st:t.st, clear:true, start:i===0?g.start:null, pencil:g.pencil});
       }else{
         const d=document.createElement("div"); d.className="wt"+(k?" cp":""); d.textContent=t.text; d.style.transform=`translateZ(${z}px)`; pb.appendChild(d);
       }
@@ -734,7 +756,7 @@ async function composeImage(){
   if(g.edition==="draw"){
     c.width=W+M*2; c.height=H*g.parts+M*2+60;
     x.fillStyle="#f5f5f2"; x.fillRect(0,0,c.width,c.height);
-    g.turns.forEach((t,i)=>{ const sc=document.createElement("canvas"); sc.width=W; sc.height=H; paint(sc.getContext("2d"), t.strokes, {start:i===0?g.start:null, pencil:g.pencil, light:true}); x.drawImage(sc,M,M+i*H); });
+    g.turns.forEach((t,i)=>{ const sc=document.createElement("canvas"); sc.width=W; sc.height=H; paint(sc.getContext("2d"), t.strokes, {st:t.st, start:i===0?g.start:null, pencil:g.pencil, light:true}); x.drawImage(sc,M,M+i*H); });
   }else{
     c.width=1140; const lines=[]; x.font="68px 'Instrument Serif', serif";
     g.turns.forEach(t=>{ let line=""; for(const w of t.text.split(/\s+/)){ const tr=(line+" "+w).trim(); if(x.measureText(tr).width>c.width-M*2 && line){ lines.push(line); line=w; } else line=tr; } lines.push(line); lines.push(""); });
