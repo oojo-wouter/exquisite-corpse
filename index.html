@@ -305,7 +305,8 @@ function splitRule(str){ str=str||""; if(str[0]!=="@") return {rule:undefined,re
 // ---------- test B: build with blocks on a grid ----------
 const COLS=10, ROWS=7, CELL=100, BFOLD=ROWS-1; // big cells, so a finger hits them
 const BLK={s:"s", r:0, x:false};
-function seedCells(){ const out=[]; while(out.length<3){ const c=1+rnd(8), r=1+rnd(4); if(out.every(i=>Math.abs(i%COLS-c)>=3)) out.push(r*COLS+c); } return out; }
+// three starting squares, at least 3 columns apart (picked from fixed spacings so it can never get stuck)
+function seedCells(){ const a=1+rnd(2), gap=3, cols=[a,a+gap,a+gap*2+rnd(2)]; return cols.map(c=>(1+rnd(4))*COLS+c); }
 const encCells = cells => cells.map(b=>`${b.i}${b.s}${b.r}${b.c}`).join(",");
 const decCells = str => (str||"").split(",").map(t=>/^(\d+)([stqc])(\d)(\d)$/.exec(t)).filter(Boolean).map(m=>({i:+m[1],s:m[2],r:+m[3]%4,c:+m[4]})).filter(b=>b.i<COLS*ROWS);
 function tile(ctx,s,r,x,y,z){
