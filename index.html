@@ -303,12 +303,18 @@ function dealRule(g, not){
 function splitRule(str){ str=str||""; if(str[0]!=="@") return {rule:undefined,rest:str}; const k=str.indexOf("|"); const id=k<0?str.slice(1):str.slice(1,k); return {rule:ruleById(id)?id:undefined, rest:k<0?"":str.slice(k+1)}; }
 
 // ---------- test B: build with blocks on a grid ----------
-const COLS=10, ROWS=7, CELL=100, BFOLD=ROWS-1; // big cells, so a finger hits them
-const BLK={s:"s", r:0, x:false};
+const COLS=40, ROWS=28, CELL=25, BFOLD=ROWS-1; // fine grid: drag to paint many small blocks
+const OLDZ=4; // games from the first 10x7 grid: each old block is 4x4 small cells
+const BLK={s:"s", r:0, x:false, eye:false};
+const EYE_R=42; // round eyes that sit on top of the blocks (head only, two at most)
 // three starting squares, at least 3 columns apart (picked from fixed spacings so it can never get stuck)
-function seedCells(){ const a=1+rnd(2), gap=3, cols=[a,a+gap,a+gap*2+rnd(2)]; return cols.map(c=>(1+rnd(4))*COLS+c); }
-const encCells = cells => cells.map(b=>`${b.i}${b.s}${b.r}${b.c}`).join(",");
-const decCells = str => (str||"").split(",").map(t=>/^(\d+)([stqc])(\d)(\d)$/.exec(t)).filter(Boolean).map(m=>({i:+m[1],s:m[2],r:+m[3]%4,c:+m[4]})).filter(b=>b.i<COLS*ROWS);
+function seedCells(){ const a=4+rnd(4), gap=12, cols=[a,a+gap,a+gap*2+rnd(4)]; return cols.map(c=>(4+rnd(16))*COLS+c); }
+// "f:" marks the fine grid; bodies without it come from the first 10x7 grid
+const encCells = (cells,eyes) => "f:"+cells.map(b=>`${b.i}${b.s}${b.r}${b.c}`).join(",")+(eyes?.length?";e:"+eyes.map(p=>p.map(Math.round).join(".")).join(","):"");
+const decEyes = str => { const m=/;e:([\d.,]+)$/.exec(str||""); return m?m[1].split(",").map(p=>p.split(".").map(Number)).filter(p=>p.length===2&&p.every(isFinite)).slice(0,2):[]; };
+const decCells = str => { str=(str||"").replace(/;e:.*$/,""); const old=!str.startsWith("f:"); if(!old) str=str.slice(2); return decCellsRaw(str,old); };
+const decCellsRaw = (str,old) => str.split(",").map(t=>/^(\d+)([stqc])(\d)(\d)$/.exec(t)).filter(Boolean).map(m=>({i:old?oldIdx(+m[1]):+m[1],s:m[2],r:+m[3]%4,c:+m[4],...(old?{z:OLDZ}:{})})).filter(b=>b.i<COLS*ROWS);
+const oldIdx = i => Math.floor(i/10)*OLDZ*COLS + (i%10)*OLDZ;
 function tile(ctx,s,r,x,y,z){
   ctx.beginPath();
   if(s==="c") ctx.arc(x+z/2,y+z/2,z/2,0,7);
@@ -458,7 +464,7 @@ function mountPad(canvas, strokes, opts){
 // one finished part of a drawing game, pen or blocks; t<1 shows it half-built
 function paintPart(ctx, g, i, t=1, extra={}){
   const p=g.turns[i];
-  if(isBlocks(g)){ const cells=p.cells||[]; return paintBlocks(ctx, t>=1?cells:cells.slice(0,Math.ceil(cells.length*t)), {seeds:i===0?g.start:null, ...extra}); }
+  if(isBlocks(g)){ const cells=p.cells||[]; return paintBlocks(ctx, t>=1?cells:cells.slice(0,Math.ceil(cells.length*t)), {seeds:i===0?g.start:null, seedZ:g.oldGrid?OLDZ:1, eyes:t>=1?p.eyes:null, ...extra}); }
   paint(ctx, partial(p.strokes,t), {st:p.st, start:i===0?g.start:null, pencil:g.pencil, ...extra});
 }
 const colOf = (c,INK) => (PEN_C[c]==null||PEN_C[c]==="ink") ? INK : PEN_C[c];
@@ -467,19 +473,21 @@ function paintBlocks(ctx, cells, opts={}){
   const c=ctx.canvas, k=c.width/W;
   ctx.setTransform(1,0,0,1,0,0); ctx.fillStyle=BG; ctx.fillRect(0,0,c.width,c.height); ctx.setTransform(k,0,0,k,0,0);
   if(opts.guides){
-    ctx.fillStyle=GUIDE; for(let r=1;r<ROWS;r++) for(let q=1;q<COLS;q++) ctx.fillRect(q*CELL-2,r*CELL-2,4,4);
+    ctx.fillStyle=GUIDE; for(let r=1;r<ROWS;r++) for(let q=1;q<COLS;q++) ctx.fillRect(q*CELL-1.5,r*CELL-1.5,3,3);
     if(!opts.last){ ctx.strokeStyle=GUIDE; ctx.lineWidth=2; ctx.setLineDash([10,10]); ctx.beginPath(); ctx.moveTo(0,BFOLD*CELL); ctx.lineTo(W,BFOLD*CELL); ctx.stroke(); ctx.setLineDash([]);
-      ctx.fillStyle=MUTE; ctx.font="500 20px Geist Mono, monospace"; ctx.fillText(T("FOLD · BUILD INTO THIS ROW","VOUW · BOUW DOOR IN DEZE RIJ"), 20, BFOLD*CELL+32); }
+      ctx.fillStyle=MUTE; ctx.font="500 20px Geist Mono, monospace"; ctx.fillText(T("FOLD · BUILD INTO THIS ROW","VOUW · BOUW DOOR IN DEZE RIJ"), 20, BFOLD*CELL-12); }
   }
-  if(opts.ghost){ ctx.globalAlpha=.25; for(const b of opts.ghost){ ctx.fillStyle=colOf(b.c,INK); tile(ctx,b.s,b.r,(b.i%COLS)*CELL,0,CELL); } ctx.globalAlpha=1; }
-  if(opts.seeds){ ctx.strokeStyle=INK; ctx.lineWidth=3; for(const i of opts.seeds) ctx.strokeRect((i%COLS)*CELL+7,Math.floor(i/COLS)*CELL+7,CELL-14,CELL-14); }
-  for(const b of cells){ ctx.fillStyle=colOf(b.c,INK); tile(ctx,b.s,b.r,(b.i%COLS)*CELL,Math.floor(b.i/COLS)*CELL,CELL); }
+  if(opts.ghost){ ctx.globalAlpha=.25; for(const b of opts.ghost){ ctx.fillStyle=colOf(b.c,INK); tile(ctx,b.s,b.r,(b.i%COLS)*CELL,0,CELL*(b.z||1)); } ctx.globalAlpha=1; }
+  if(opts.seeds){ ctx.strokeStyle=INK; ctx.lineWidth=3; const sz=CELL*(opts.seedZ||1), m=Math.max(3,sz*.14); for(const i of opts.seeds) ctx.strokeRect((i%COLS)*CELL+m,Math.floor(i/COLS)*CELL+m,sz-2*m,sz-2*m); }
+  for(const b of cells){ ctx.fillStyle=colOf(b.c,INK); tile(ctx,b.s,b.r,(b.i%COLS)*CELL,Math.floor(b.i/COLS)*CELL,CELL*(b.z||1)); }
+  for(const [x,y] of opts.eyes||[]){ ctx.fillStyle="#ffffff"; ctx.strokeStyle=INK; ctx.lineWidth=5; ctx.beginPath(); ctx.arc(x,y,EYE_R,0,7); ctx.fill(); ctx.stroke();
+    ctx.fillStyle=INK; ctx.beginPath(); ctx.arc(x+6,y+8,EYE_R*.42,0,7); ctx.fill(); ctx.fillStyle="#ffffff"; ctx.beginPath(); ctx.arc(x+12,y+1,EYE_R*.12,0,7); ctx.fill(); }
 }
 // the previous part's bottom row, shown faintly in the top row of the next part
-function ghostRow(prev){ const g=(prev||[]).filter(b=>Math.floor(b.i/COLS)===BFOLD).map(b=>({...b,i:b.i%COLS})); return g; }
+function ghostRow(prev){ return (prev||[]).filter(b=>Math.floor(b.i/COLS)+(b.z||1)-1===BFOLD).map(b=>({s:b.s,r:b.r,c:b.c,i:b.i%COLS})); }
 function mountGrid(canvas, d, opts){
   const ctx=canvas.getContext("2d"); let down=null, raf=0;
-  const redraw=()=>{ raf=0; paintBlocks(ctx, d.cells, opts); };
+  const redraw=()=>{ raf=0; paintBlocks(ctx, d.cells, {...opts, eyes:d.eyes}); };
   const req=()=>{ if(!raf) raf=requestAnimationFrame(redraw); };
   const cellAt=e=>{ const r=canvas.getBoundingClientRect(), q=Math.floor((e.clientX-r.left)/r.width*COLS), w=Math.floor((e.clientY-r.top)/r.height*ROWS); return q<0||w<0||q>=COLS||w>=ROWS?-1:w*COLS+q; };
   const apply=(i,tap)=>{ if(i<0) return false; const k=d.cells.findIndex(b=>b.i===i);
@@ -489,7 +497,12 @@ function mountGrid(canvas, d, opts){
       if(b.s===BLK.s && b.c===PEN.c && (b.r===BLK.r||b.s==="s"||b.s==="c")) return false;
       d.cells.splice(k,1); }
     d.cells.push({i,s:BLK.s,r:BLK.r,c:PEN.c}); return true; };
-  canvas.addEventListener("pointerdown",e=>{ if(down) return; canvas.setPointerCapture(e.pointerId); const snap=JSON.stringify(d.cells); const i=cellAt(e); down={last:i};
+  canvas.addEventListener("pointerdown",e=>{ if(down) return;
+    if(BLK.eye && opts.head){ const r=canvas.getBoundingClientRect(), x=(e.clientX-r.left)/r.width*W, y=(e.clientY-r.top)/r.height*H, k=d.eyes.findIndex(p=>Math.hypot(p[0]-x,p[1]-y)<EYE_R+8);
+      if(k<0 && d.eyes.length>=2){ toast(T("Two eyes is the limit. Tap an eye to remove it.","Twee ogen is het maximum. Tik op een oog om het weg te halen.")); return; }
+      d.hist.push(blkSnap(d)); if(k>=0) d.eyes.splice(k,1); else d.eyes.push([Math.max(EYE_R,Math.min(W-EYE_R,x)),Math.max(EYE_R,Math.min(H-EYE_R,y))]);
+      req(); opts.onChange?.(); persist(); e.preventDefault(); return; }
+    canvas.setPointerCapture(e.pointerId); const snap=blkSnap(d); const i=cellAt(e); down={last:i};
     if(apply(i,true)){ d.hist.push(snap); if(d.hist.length>40) d.hist.shift(); down.snap=true; } else down.snap0=snap; req(); e.preventDefault(); });
   canvas.addEventListener("pointermove",e=>{ if(!down) return; const evs=e.getCoalescedEvents?e.getCoalescedEvents():[e];
     for(const ev of evs){ const i=cellAt(ev); if(i===down.last) continue; down.last=i; if(apply(i,false) && !down.snap){ d.hist.push(down.snap0); down.snap=true; } } req(); });
@@ -506,16 +519,19 @@ function shapeSvg(s,r){
   const C=P[r], a0=r*Math.PI/2, a1=a0+Math.PI/2, pt=a=>[C[0]+14*Math.cos(a),C[1]+14*Math.sin(a)].map(v=>Math.round(v)).join(" ");
   return `<svg viewBox="0 0 20 20"><path d="M${C.join(" ")} L${pt(a0)} A14 14 0 0 1 ${pt(a1)} Z"/></svg>`;
 }
-function blocksBar(){
+const blkSnap = d => JSON.stringify({c:d.cells,e:d.eyes||[]});
+function blocksBar(head){
   const names={s:T("Square","Vierkant"),t:T("Triangle","Driehoek"),q:T("Quarter circle","Kwartcirkel"),c:T("Circle","Cirkel")};
   const shapes=["s","t","q","c"].map(s=>`<button class="pen tool" data-blk="${s}" aria-pressed="${!BLK.x&&BLK.s===s}" aria-label="${names[s]}" title="${names[s]}" onclick="setBlk('${s}')">${shapeSvg(s,BLK.r)}</button>`).join("");
   const turnB=`<button class="pen tool" aria-label="${T("Turn the shape","Draai de vorm")}" title="${T("Turn","Draai")}" onclick="turnBlk()"><svg viewBox="0 0 20 20"><path d="M10 3a7 7 0 1 0 7 7h-2.2A4.8 4.8 0 1 1 10 5.2V8l4-3.6L10 1z"/></svg></button>`;
   const eraser=`<button class="pen tool" data-blk="x" aria-pressed="${BLK.x}" aria-label="${T("Eraser","Gom")}" title="${T("Eraser","Gom")}" onclick="setBlk('x')"><svg viewBox="0 0 20 20"><path d="M3 15l7-10 7 5-5 7H6z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></button>`;
   const cols=PEN_C.map((c,i)=>`<button class="pen sw" data-pen-c="${i}" aria-pressed="${PEN.c===i}" aria-label="${i?T("Colour ","Kleur ")+c:T("Cobalt","Kobalt")}" onclick="setPen('c',${i})"><i style="background:${c==="ink"?"var(--ink)":c}"></i></button>`).join("");
-  return `<div class="pens"><div class="row" style="gap:2px">${shapes}${turnB}${eraser}</div><span class="pensep"></span><div class="row" style="gap:2px">${cols}</div></div>`;
+  const eyeB=head?`<button class="pen tool" data-blk="eye" aria-pressed="${BLK.eye}" aria-label="${T("Eyes","Ogen")}" title="${T("Eyes: tap to place, two at most","Ogen: tik om te plaatsen, maximum twee")}" onclick="setBlk('eye')"><svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="7.5" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="11" cy="11.5" r="3.2"/></svg></button>`:"";
+  return `<div class="pens"><div class="row" style="gap:2px">${shapes}${turnB}${eraser}${eyeB}</div><span class="pensep"></span><div class="row" style="gap:2px">${cols}</div></div>`;
 }
-function setBlk(s){ if(s==="x") BLK.x=!BLK.x; else { BLK.x=false; BLK.s=s; } document.querySelectorAll("[data-blk]").forEach(b=>b.setAttribute("aria-pressed", b.dataset.blk==="x"?BLK.x:(!BLK.x&&b.dataset.blk===BLK.s))); }
-function turnBlk(){ BLK.r=(BLK.r+1)%4; if(BLK.s==="s"||BLK.s==="c"){ BLK.x=false; BLK.s="t"; setBlk("t"); } blkIcons(); }
+function setBlk(s){ if(s==="x"){ BLK.x=!BLK.x; BLK.eye=false; } else if(s==="eye"){ BLK.eye=!BLK.eye; BLK.x=false; } else { BLK.x=false; BLK.eye=false; BLK.s=s; }
+  document.querySelectorAll("[data-blk]").forEach(b=>{ const k=b.dataset.blk; b.setAttribute("aria-pressed", k==="x"?BLK.x:k==="eye"?BLK.eye:(!BLK.x&&!BLK.eye&&k===BLK.s)); }); }
+function turnBlk(){ BLK.eye=false; BLK.r=(BLK.r+1)%4; if(BLK.s==="s"||BLK.s==="c"){ BLK.x=false; BLK.s="t"; setBlk("t"); } blkIcons(); }
 function blkIcons(){ document.querySelectorAll("[data-blk]").forEach(b=>{ const s=b.dataset.blk; if(s==="t"||s==="q") b.innerHTML=shapeSvg(s,BLK.r); }); }
 
 // ---------- cheat sheet: famous exquisite corpses (images stay on the museums' sites) ----------
@@ -557,18 +573,18 @@ async function api(path, opts={}){
 }
 const newId=()=>Array.from(crypto.getRandomValues(new Uint8Array(8)),b=>"abcdefghijkmnpqrstuvwxyz23456789"[b%32]).join("");
 // start: "B" + seed cells for blocks, "R" in front when the game deals rules
-const startStr = g => isBlocks(g) ? "B"+g.start.join(",") : (g.rules?"R":"")+g.start.map(p=>p.map(Math.round).join(",")).join("|");
-function parseStart(s){ s=s||""; const f=s[0]; const blocks=f==="B", rules=f==="R"; if(blocks||rules) s=s.slice(1);
-  return { tech:blocks?"blocks":"pen", rules, start: blocks ? s.split(",").filter(Boolean).map(Number) : (s?s.split("|").map(p=>p.split(",").map(Number)):[]) }; }
-const turnBody = (g,t) => g.edition!=="draw" ? "" : isBlocks(g) ? encCells(t.cells||[]) : enc(t.strokes||[],t.st);
+const startStr = g => isBlocks(g) ? "G"+g.start.join(",") : (g.rules?"R":"")+g.start.map(p=>p.map(Math.round).join(",")).join("|");
+function parseStart(s){ s=s||""; const f=s[0]; const old=f==="B", blocks=old||f==="G", rules=f==="R"; if(blocks||rules) s=s.slice(1);
+  return { tech:blocks?"blocks":"pen", rules, oldGrid:old, start: blocks ? s.split(",").filter(Boolean).map(Number).map(i=>old?oldIdx(i):i) : (s?s.split("|").map(p=>p.split(",").map(Number)):[]) }; }
+const turnBody = (g,t) => g.edition!=="draw" ? "" : isBlocks(g) ? encCells(t.cells||[], t.eyes) : enc(t.strokes||[],t.st);
 const withRule = (t,body) => t.rule ? "@"+t.rule+(body?"|"+body:"") : body;
 const turnRow = (g,n,t) => ({game_id:g.id, n, strokes:withRule(t,turnBody(g,t)), text:t.text||"", name:t.name||""});
-const turnFrom = (g,body,extra) => g.edition==="draw" ? (isBlocks(g)?{cells:decCells(body)}:decS(body)) : {};
+const turnFrom = (g,body,extra) => g.edition==="draw" ? (isBlocks(g)?{cells:decCells(body),eyes:decEyes(body)}:decS(body)) : {};
 const dbCreate = g => api("games",{method:"POST",body:JSON.stringify({id:g.id,edition:g.edition,parts:g.parts,start:startStr(g)})});
 const dbTurn = (g,n,t) => api("turns",{method:"POST",body:JSON.stringify(turnRow(g,n,t))});
 const dbCount = async id => (await api(`turns?game_id=eq.${id}&select=n`)).length;
 function rowToGame(r, id){
-  const ps=parseStart(r.start), g={ id, edition:r.edition, parts:r.parts, theme:"", tech:ps.tech, rules:ps.rules, start:ps.start };
+  const ps=parseStart(r.start), g={ id, edition:r.edition, parts:r.parts, theme:"", tech:ps.tech, rules:ps.rules, oldGrid:ps.oldGrid, start:ps.start };
   g.turns=[...(r.turns||[])].sort((a,b)=>a.n-b.n).map(t=>{ const {rule,rest}=splitRule(t.strokes); return {...turnFrom(g,rest), text:t.text, name:t.name, rule}; });
   return g;
 }
@@ -676,7 +692,7 @@ async function unpackGame(str){
   const raw = kind==="z" ? await pipe(bytes,new DecompressionStream("deflate-raw")) : bytes;
   const o=JSON.parse(new TextDecoder().decode(raw)), draw=o.e==="d";
   if(![3,4].includes(o.n)) throw new Error("bad game");
-  const ps=parseStart(o.s), g={ id:"link", edition:draw?"draw":"words", theme:o.t, parts:o.n, tech:ps.tech, rules:ps.rules, start:ps.start };
+  const ps=parseStart(o.s), g={ id:"link", edition:draw?"draw":"words", theme:o.t, parts:o.n, tech:ps.tech, rules:ps.rules, oldGrid:ps.oldGrid, start:ps.start };
   g.turns=o.p.slice(0,o.n).map(([a,name,rule])=>({...(draw?turnFrom(g,String(a)):{text:String(a).slice(0,70)}), name:String(name).slice(0,24), rule:ruleById(rule)?rule:undefined}));
   return g;
 }
@@ -743,7 +759,7 @@ function home(){
   ${resumeBtn()}
   ${S.tab==="blocks" ? `<div class="stack"><span class="lab">${T("Blocks · build it like a game","Blokken · bouw het als een game")}</span>
     <div class="steps" aria-label="${T("How to play Blocks","Zo speel je Blokken")}">
-      <div><b>1</b><span>${T("<strong>Build a head.</strong> Tap the grid to place blocks, start at the squares. Tap a block again to turn it. Run a few blocks into the bottom row.","<strong>Bouw een hoofd.</strong> Tik op het rooster om blokken te plaatsen, begin bij de vierkantjes. Tik nog eens om een blok te draaien. Laat een paar blokken doorlopen tot in de onderste rij.")}</span></div>
+      <div><b>1</b><span>${T("<strong>Build a head.</strong> Tap or drag over the grid to paint small blocks, starting at the squares. Tap a block again to turn it. Run a few blocks into the bottom row.","<strong>Bouw een hoofd.</strong> Tik of sleep over het rooster om kleine blokjes te zetten, begin bij de vierkantjes. Tik nog eens om een blokje te draaien. Laat een paar blokken doorlopen tot in de onderste rij.")}</span></div>
       <div><b>2</b><span>${T("<strong>Build a body.</strong> You only see a faint copy of the bottom row above. Build on from there.","<strong>Bouw een lijf.</strong> Je ziet alleen een vage kopie van de onderste rij erboven. Bouw daar verder.")}</span></div>
       <div><b>3</b><span>${T("<strong>Build legs.</strong> Same again.","<strong>Bouw benen.</strong> Net hetzelfde.")}</span></div>
       <div class="end">${T("Then unfold it and watch the creature build itself, block by block.","Vouw dan open en kijk hoe het wezen zichzelf bouwt, blok per blok.")}</div>
@@ -793,13 +809,13 @@ function turn(){
     <div class="chips">${d.kws.map(k=>`<button class="chip kw" onclick="useKw(this.textContent)">${esc(k)}</button>`).join("")}</div></div>`;
   const sign=`<input type="text" id="sign" maxlength="24" placeholder="${T("Sign your part (optional)","Onderteken je deel (mag)")}" value="${esc(d.name)}" oninput="S.draft.name=this.value">`;
   if(isBlocks(g)){
-    d.cells ||= []; d.hist ||= [];
+    d.cells ||= []; d.hist ||= []; d.eyes ||= []; if(n>0) BLK.eye=false;
     const intro = n===0 ? T(`Start from the three squares. Build the <b>${names[n].toLowerCase()}</b> of a creature, block by block.`,`Begin bij de drie vierkantjes. Bouw blok per blok het <b>${names[n].toLowerCase()}</b> van een wezen.`) :
       T(`The faint blocks at the top are the bottom row of the last part. Build on from there: the <b>${names[n].toLowerCase()}</b>.`,`De vage blokken bovenaan zijn de onderste rij van het vorige deel. Bouw daar verder: <b>${names[n].toLowerCase()}</b>.`);
     return `${prog}
     <div class="stack" style="gap:4px"><span class="lab">${T("Part","Deel")} ${n+1} ${T("of","van")} ${g.parts}</span><h2>${names[n]}</h2></div>
     <p>${intro}${last?"":T(" Run some blocks into the bottom row."," Laat een paar blokken doorlopen tot in de onderste rij.")}</p>
-    ${blocksBar()}
+    ${blocksBar(n===0)}${n===0?`<p class="muted" style="font-size:13px;margin-top:-8px">${T("Tip: the eye button adds two round eyes on top of your blocks.","Tip: met de oogknop zet je twee ronde ogen bovenop je blokjes.")}</p>`:""}
     <div class="sheet"><canvas id="pad"></canvas></div>
     <div class="tools"><div class="row"><button onclick="undo()">${T("Undo","Ongedaan")}</button>${confirmBtn("clear",T("Clear","Wissen"),T("Clear all?","Alles wissen?"),"ghost","clearPad()")}</div>
       <span class="foldnote" id="cnt"></span></div>
@@ -842,7 +858,7 @@ after.turn=()=>{
   if(g.edition!=="draw"){ const ta=$("#txt"); if(ta && timeUp()) ta.readOnly=true; updWordsDone(); return; }
   if(isBlocks(g)){
     const prev=n>0?ghostRow(g.turns[n-1].cells):null;
-    const opts={ guides:true, last:n===g.parts-1, seeds:n===0?g.start:(prev&&!prev.length?seedRow():null), ghost:prev, onChange:updCount };
+    const opts={ guides:true, last:n===g.parts-1, seeds:n===0?g.start:(prev&&!prev.length?seedRow():null), seedZ:n===0&&g.oldGrid?OLDZ:1, ghost:prev, head:n===0, onChange:updCount };
     pad=mountGrid($("#pad"), S.draft, opts); updCount(); return;
   }
   S.draft.st ||= S.draft.strokes.map(()=>10);
@@ -853,7 +869,7 @@ after.turn=()=>{
   pad=mountPad($("#pad"), S.draft.strokes, opts); updCount();
 };
 // no blocks reached the fold: offer three spots in the top row to start from
-function seedRow(){ return pick([1,3,5,7,8],3); }
+function seedRow(){ return pick([4,10,16,22,28,34],3); }
 
 // ---------- rule card and its counter ----------
 let ruleTick=null;
@@ -905,9 +921,9 @@ function updCount(){ const c=$("#cnt"); if(!c) return; const g=S.game, n=g.turns
     c.textContent=T(cs.length+" block"+(cs.length===1?"":"s"),cs.length+(cs.length===1?" blok":" blokken"))+(n===g.parts-1?"":T(" · "+k+" at the fold"," · "+k+" aan de vouw")); return; }
   if(n===g.parts-1){ c.textContent=""; $("#done").disabled=!S.draft.strokes.length; return; }
   const k=S.draft.strokes.filter(s=>s.some((v,i)=>i%2&&v>=FOLD-10)).length; c.textContent=T(k+" line"+(k===1?"":"s")+" at the fold",k+(k===1?" lijn":" lijnen")+" aan de vouw"); $("#done").disabled=!S.draft.strokes.length; }
-function undo(){ if(isBlocks(S.game)){ const h=S.draft.hist.pop(); if(h!=null) S.draft.cells=JSON.parse(h); pad?.redraw(); updCount(); persist(); return; }
+function undo(){ if(isBlocks(S.game)){ const h=S.draft.hist.pop(); if(h!=null){ const v=JSON.parse(h); if(Array.isArray(v)) S.draft.cells=v; else { S.draft.cells=v.c; S.draft.eyes=v.e; } } pad?.redraw(); updCount(); persist(); return; }
   S.draft.strokes.pop(); S.draft.st?.pop(); pad?.redraw(); updCount(); persist(); }
-function clearPad(){ if(isBlocks(S.game)){ S.draft.hist.push(JSON.stringify(S.draft.cells)); S.draft.cells=[]; pad?.redraw(); updCount(); persist(); toast(T("Cleared","Gewist")); return; }
+function clearPad(){ if(isBlocks(S.game)){ S.draft.hist.push(blkSnap(S.draft)); S.draft.cells=[]; S.draft.eyes=[]; pad?.redraw(); updCount(); persist(); toast(T("Cleared","Gewist")); return; }
   S.draft.strokes.length=0; if(S.draft.st) S.draft.st.length=0; pad?.redraw(); updCount(); persist(); toast(T("Cleared","Gewist")); }
 function reshuffle(){ const g=S.game, t=THEMES[g.theme]; S.draft.kws = g.edition==="draw"? pick(t.nouns,4) : kwFor(g.turns.length,t); render(); }
 function useKw(k){
@@ -917,7 +933,7 @@ function useKw(k){
 async function finishTurn(){
   const g=S.game, d=S.draft, n=g.turns.length;
   const t={strokes:d.strokes, st:d.st||[], text:d.text.trim(), name:(d.name||"").trim()};
-  if(isBlocks(g)) t.cells=d.cells; if(d.rule) t.rule=d.rule;
+  if(isBlocks(g)){ t.cells=d.cells; t.eyes=d.eyes||[]; } if(d.rule) t.rule=d.rule;
   if(t.name) store.set("ec-name", t.name);
   if(S.mode==="remote" && hasDB()){
     $("#done").disabled=true;
