@@ -5,6 +5,12 @@
 <meta name="theme-color" content="#f4f6fb">
 <style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}[hidden]{display:none!important}img{max-width:100%}</style>
 <title>Exquisite Corpse</title>
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="manifest" href="icons/manifest.webmanifest">
+<meta name="apple-mobile-web-app-title" content="Corpse">
+<meta property="og:image" content="https://oojo-wouter.github.io/exquisite-corpse/icons/icon-512.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
 <style>
@@ -162,7 +168,41 @@ button.warn{background:var(--ink);color:var(--paper)}
 .pb .wt{font-family:var(--display);font-size:clamp(22px,6.5vw,30px);line-height:1.05;padding:6px 0;color:var(--ink)}
 .pb .wt.cp{color:var(--grey)}
 .hint{font-size:13px;color:var(--grey);text-align:center}
+/* test tabs on the start screen */
+.tabs{display:grid;grid-template-columns:1fr 1fr;border-bottom:1.5px solid var(--line)}
+.tabs button{border:0;border-radius:0;border-bottom:3px solid transparent;margin-bottom:-1.5px;min-height:54px;padding:6px 4px;color:var(--grey);font-size:16px;line-height:1.15}
+.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--ink)}
+.tabs small{display:block;font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;margin-bottom:2px}
+.teaser{display:flex;flex-wrap:wrap;gap:6px}
+.teaser span{font-family:var(--display);font-style:italic;font-size:17px;border:1px solid var(--ink);border-radius:999px;padding:2px 12px}
+/* rule card: unfolds like paper, counter on the right, turns solid when used up */
+.rule{border:1.5px solid var(--ink);background:var(--card);padding:14px 16px;display:grid;grid-template-columns:1fr auto;column-gap:14px;row-gap:3px;align-items:center;
+  transform-origin:top;animation:ruleIn .8s cubic-bezier(.2,.7,.2,1);transition:background .3s,color .3s}
+.rule>*{grid-column:1}
+@keyframes ruleIn{from{transform:perspective(600px) rotateX(-90deg);opacity:0}}
+.rule .rt{font-family:var(--display);font-style:italic;font-size:32px;line-height:1}
+.rule .rd{font-size:13px;line-height:1.35;color:var(--grey)}
+.rule .ctr{grid-column:2;grid-row:1/span 4;text-align:center;min-width:78px}
+.ctr .big{font-family:var(--display);font-size:56px;line-height:.9;font-variant-numeric:tabular-nums}
+.ctr .u{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--grey)}
+.ctr .pips{display:flex;gap:4px;justify-content:center;flex-wrap:wrap;max-width:96px;margin:6px auto 0}
+.pips i{width:9px;height:9px;border-radius:50%;border:1.5px solid currentColor;box-sizing:border-box}
+.pips i.on{background:currentColor}
+.ctr.low .big{animation:pulse .8s infinite}
+@keyframes pulse{50%{opacity:.3}}
+.timebar{grid-column:1/-1!important;height:3px;background:var(--line);margin-top:8px}
+.timebar i{display:block;height:100%;background:currentColor;transition:width .25s linear}
+.ruleswap{justify-self:start;font-size:13px;min-height:32px;padding:4px 0;border:0}
+.rule.over{background:var(--ink);color:var(--paper)}
+.rule.over .rd,.rule.over .u{color:var(--paper);opacity:.8}
+.rule.over .timebar{background:transparent}
+.shake{animation:shake .3s}
+@keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.pen svg{width:20px;height:20px;fill:currentColor;color:var(--ink)}
+.pen.tool{border-color:var(--line)}
+.pen.tool[aria-pressed="true"]{border-color:var(--ink);background:var(--wash)}
 @media (prefers-reduced-motion: reduce){
+  .rule,.ctr.low .big{animation:none}
   .reveal .sec{transition:none}
   .fold-ill i:first-child{animation:none}
 }
@@ -238,6 +278,46 @@ function applyLang(){ document.documentElement.lang=LANG; const b=document.getEl
   if(S?.screen!=="reveal") document.title=T("Exquisite Corpse","Cadavre exquis"); }
 const W = 1000, H = 700, FOLD = 630, LW = 9;
 
+// ---------- test A: a surprise rule for every part ----------
+const RULES_D=[
+ {id:"blind",lines:5,blind:1,en:["Draw blind","Your lines stay invisible until the reveal."],nl:["Teken blind","Je lijnen blijven onzichtbaar tot de onthulling."]},
+ {id:"one",lines:1,en:["One unbroken line","Don't lift your finger. One line, that's all."],nl:["Eén doorlopende lijn","Niet loslaten. Eén lijn, meer niet."]},
+ {id:"seven",lines:7,en:["Seven lines","No more than seven. Make each one count."],nl:["Zeven lijnen","Niet meer dan zeven. Laat elke lijn tellen."]},
+ {id:"fast",secs:20,en:["Twenty seconds","The clock starts when you touch the paper."],nl:["Twintig seconden","De klok start zodra je het papier raakt."]},
+ {id:"hand",secs:45,en:["Wrong hand","Draw with your other hand. You get 45 seconds."],nl:["Verkeerde hand","Teken met je andere hand. Je krijgt 45 seconden."]}
+];
+const RULES_W=[
+ {id:"four",words:4,en:["Four words","Not one more."],nl:["Vier woorden","Geen woord meer."]},
+ {id:"wfast",secs:15,en:["Fifteen seconds","The clock starts with your first letter."],nl:["Vijftien seconden","De klok start bij je eerste letter."]},
+ {id:"noe",noE:1,en:["No letter E","Every e you type disappears."],nl:["Geen letter E","Elke e die je typt verdwijnt."]},
+ {id:"same",same:1,en:["One letter","Every word starts with the same letter."],nl:["Eén letter","Elk woord begint met dezelfde letter."]}
+];
+const ruleById = id => [...RULES_D,...RULES_W].find(r=>r.id===id);
+const ruleT = r => r[LANG]||r.en;
+function dealRule(g, not){
+  const pool=g.edition==="draw"?RULES_D:RULES_W, used=g.turns.map(t=>t.rule);
+  let c=pool.filter(r=>!used.includes(r.id)&&r.id!==not); if(!c.length) c=pool.filter(r=>r.id!==not);
+  return c[rnd(c.length)].id;
+}
+// rule travels in front of a turn's strokes: "@blind|x,y,..."
+function splitRule(str){ str=str||""; if(str[0]!=="@") return {rule:undefined,rest:str}; const k=str.indexOf("|"); const id=k<0?str.slice(1):str.slice(1,k); return {rule:ruleById(id)?id:undefined, rest:k<0?"":str.slice(k+1)}; }
+
+// ---------- test B: build with blocks on a grid ----------
+const COLS=10, ROWS=7, CELL=100, BFOLD=ROWS-1; // big cells, so a finger hits them
+const BLK={s:"s", r:0, x:false};
+function seedCells(){ const out=[]; while(out.length<3){ const c=1+rnd(8), r=1+rnd(4); if(out.every(i=>Math.abs(i%COLS-c)>=3)) out.push(r*COLS+c); } return out; }
+const encCells = cells => cells.map(b=>`${b.i}${b.s}${b.r}${b.c}`).join(",");
+const decCells = str => (str||"").split(",").map(t=>/^(\d+)([stqc])(\d)(\d)$/.exec(t)).filter(Boolean).map(m=>({i:+m[1],s:m[2],r:+m[3]%4,c:+m[4]})).filter(b=>b.i<COLS*ROWS);
+function tile(ctx,s,r,x,y,z){
+  ctx.beginPath();
+  if(s==="c") ctx.arc(x+z/2,y+z/2,z/2,0,7);
+  else if(s==="t"){ const P=[[x,y],[x+z,y],[x+z,y+z],[x,y+z]], o=(r+2)%4; P.filter((_,k)=>k!==o).forEach((p,k)=>k?ctx.lineTo(...p):ctx.moveTo(...p)); ctx.closePath(); }
+  else if(s==="q"){ const C=[[x,y],[x+z,y],[x+z,y+z],[x,y+z]][r]; ctx.moveTo(...C); ctx.arc(C[0],C[1],z,r*Math.PI/2,(r+1)*Math.PI/2); ctx.closePath(); }
+  else ctx.rect(x-.3,y-.3,z+.6,z+.6);
+  ctx.fill();
+}
+const isBlocks = g => g?.tech==="blocks";
+
 // ---------- small helpers ----------
 const $ = s => document.querySelector(s);
 const rnd = n => Math.floor(Math.random()*n);
@@ -268,18 +348,26 @@ function armTap(key,label,ask,fn){
   armed[key]=setTimeout(()=>{ armed[key]=0; if(b.isConnected){ b.textContent=label; b.classList.remove("warn"); } },3000);
 }
 // ---------- state ----------
-let S = { screen:"home", edition:"draw", theme:"Dream zoo", parts:3, mode:"local", game:null };
+let S = { screen:"home", edition:"draw", theme:"Dream zoo", parts:3, mode:"local", game:null,
+  tab: (()=>{ const q=new URLSearchParams(location.search).get("tab"); if(q==="blocks"||q==="rules") return q; return store.get("ec-tab")==="blocks"?"blocks":"rules"; })() };
+function setTab(t){ S.tab=t; store.set("ec-tab",t); const q=new URLSearchParams(location.search); q.set("tab",t); history.replaceState(null,"",location.pathname+"?"+q+location.hash); render(); }
+function tabsHtml(){
+  return `<div class="tabs" role="tablist" aria-label="${T("Test versions","Testversies")}">
+    <button role="tab" aria-selected="${S.tab!=="blocks"}" onclick="setTab('rules')"><small>Test A</small>${T("Pen + rules","Pen + regels")}</button>
+    <button role="tab" aria-selected="${S.tab==="blocks"}" onclick="setTab('blocks')"><small>Test B</small>${T("Blocks","Blokken")}</button></div>`;
+}
 
 function persist(){ if(S.mode!=="local") return; store.set("ec-game", S.game && S.game.turns.length<S.game.parts ? JSON.stringify({g:S.game,d:S.draft,screen:S.screen}) : ""); }
 function savedGame(){ try{ return JSON.parse(store.get("ec-game")||"null"); }catch(e){ return null; } }
 function resumeBtn(){ const sv=savedGame(); if(!sv) return "";
-  return `<div class="card" style="gap:10px"><span class="lab">${T("Unfinished game","Onafgewerkt spel")}</span><p>${sv.g.edition==="draw"?T("Drawing","Tekenen"):T("Words","Woorden")} · ${sv.g.turns.length} ${T("of","van")} ${sv.g.parts} ${T("parts done","delen klaar")}</p>
+  return `<div class="card" style="gap:10px"><span class="lab">${T("Unfinished game","Onafgewerkt spel")}</span><p>${edName(sv.g)} · ${sv.g.turns.length} ${T("of","van")} ${sv.g.parts} ${T("parts done","delen klaar")}</p>
   <div class="row"><button class="solid" onclick="resume()">${T("Continue","Verder")}</button>${confirmBtn("drop",T("Discard","Weggooien"),T("Discard it?","Echt weggooien?"),"ghost","store.set('ec-game','');render()")}</div></div>`; }
 function resume(){ const sv=savedGame(); if(!sv) return; S.mode="local"; S.game=sv.g; S.draft=sv.d; go(sv.screen==="turn"?"turn":"handoff"); }
 function quitGame(){ if(S.mode==="local") store.set("ec-game",""); S.game=null; S.draft=null; location.hash=""; go("home"); }
 function newGame(){
-  return { id: Math.random().toString(36).slice(2,8), edition:S.edition, theme:S.theme, parts:3,
-    start: S.edition==="draw" ? starterDots() : [], turns:[] };
+  const blocks=S.tab==="blocks", edition=blocks?"draw":S.edition;
+  return { id: Math.random().toString(36).slice(2,8), edition, theme:S.theme, parts:3, tech:blocks?"blocks":"pen", rules:!blocks,
+    start: blocks ? seedCells() : edition==="draw" ? starterDots() : [], turns:[] };
 }
 function starterDots(){
   const pts=[]; while(pts.length<4){ const p=[120+rnd(760), 110+rnd(440)]; if(pts.every(q=>Math.hypot(q[0]-p[0],q[1]-p[1])>170)) pts.push(p); } return pts;
@@ -293,6 +381,8 @@ function foldDots(strokes){
   if(!out.length){ return pick([200,340,500,660,800],3).sort((a,b)=>a-b).map(x=>x+rnd(40)-20).map(x=>({x,random:true})); }
   return out.slice(0,7).map(x=>({x}));
 }
+const edName = g => isBlocks(g)?T("Blocks","Blokken"):g.edition==="draw"?T("Drawing","Tekenen"):T("Words","Woorden");
+const foldHint = g => isBlocks(g)?T("the bottom row of blocks","de onderste rij blokken"):g.edition==="draw"?T("the dots at the fold","de stippen aan de vouw"):T("the last word","het laatste woord");
 const partNames = g => (g.edition==="draw"?DRAW_PARTS:WORD_PARTS)[g.parts];
 
 // ---------- drawing ----------
@@ -351,10 +441,12 @@ function sizeCanvas(c){ const r=c.getBoundingClientRect(), d=Math.min(window.dev
 function mountPad(canvas, strokes, opts){
   const ctx=canvas.getContext("2d"); let cur=null, raf=0;
   const st=opts.st||[];
-  const redraw=()=>{ raf=0; paint(ctx, cur?[...strokes,cur]:strokes, {...opts, st:cur?[...st,penCode()]:st}); };
+  const redraw=()=>{ raf=0;
+    if(opts.blind){ paint(ctx, [], opts); if(cur){ const [x,y]=cur.slice(-2); ctx.strokeStyle=css("--grey"); ctx.lineWidth=2; ctx.beginPath(); ctx.arc(x,y,16,0,7); ctx.stroke(); } return; }
+    paint(ctx, cur?[...strokes,cur]:strokes, {...opts, st:cur?[...st,penCode()]:st}); };
   const req=()=>{ if(!raf) raf=requestAnimationFrame(redraw); };
   const pos=e=>{ const r=canvas.getBoundingClientRect(); return [ (e.clientX-r.left)/r.width*W, (e.clientY-r.top)/r.height*H ]; };
-  canvas.addEventListener("pointerdown",e=>{ if(cur) return; canvas.setPointerCapture(e.pointerId); cur=pos(e); req(); e.preventDefault(); });
+  canvas.addEventListener("pointerdown",e=>{ if(cur) return; if(opts.canDraw && !opts.canDraw()){ opts.onBlocked?.(); return; } opts.onStart?.(); canvas.setPointerCapture(e.pointerId); cur=pos(e); req(); e.preventDefault(); });
   canvas.addEventListener("pointermove",e=>{ if(!cur) return; const evs=e.getCoalescedEvents?e.getCoalescedEvents():[e];
     for(const ev of evs){ const [x,y]=pos(ev); const lx=cur[cur.length-2], ly=cur[cur.length-1]; if(Math.hypot(x-lx,y-ly)>3) cur.push(Math.max(0,Math.min(W,x)),Math.max(0,Math.min(H,y))); } req(); });
   const end=()=>{ if(!cur) return; strokes.push(cur); st.push(penCode()); cur=null; req(); opts.onChange?.(); persist(); };
@@ -362,6 +454,68 @@ function mountPad(canvas, strokes, opts){
   new ResizeObserver(()=>{ sizeCanvas(canvas); redraw(); }).observe(canvas);
   return { redraw:req };
 }
+// one finished part of a drawing game, pen or blocks; t<1 shows it half-built
+function paintPart(ctx, g, i, t=1, extra={}){
+  const p=g.turns[i];
+  if(isBlocks(g)){ const cells=p.cells||[]; return paintBlocks(ctx, t>=1?cells:cells.slice(0,Math.ceil(cells.length*t)), {seeds:i===0?g.start:null, ...extra}); }
+  paint(ctx, partial(p.strokes,t), {st:p.st, start:i===0?g.start:null, pencil:g.pencil, ...extra});
+}
+const colOf = (c,INK) => (PEN_C[c]==null||PEN_C[c]==="ink") ? INK : PEN_C[c];
+function paintBlocks(ctx, cells, opts={}){
+  const BG=opts.light?"#ffffff":css("--card"), INK=opts.light?"#0047ab":css("--ink"), GUIDE=opts.light?"#b4c3e4":css("--guide"), MUTE=opts.light?"#6f83b3":css("--grey");
+  const c=ctx.canvas, k=c.width/W;
+  ctx.setTransform(1,0,0,1,0,0); ctx.fillStyle=BG; ctx.fillRect(0,0,c.width,c.height); ctx.setTransform(k,0,0,k,0,0);
+  if(opts.guides){
+    ctx.fillStyle=GUIDE; for(let r=1;r<ROWS;r++) for(let q=1;q<COLS;q++) ctx.fillRect(q*CELL-2,r*CELL-2,4,4);
+    if(!opts.last){ ctx.strokeStyle=GUIDE; ctx.lineWidth=2; ctx.setLineDash([10,10]); ctx.beginPath(); ctx.moveTo(0,BFOLD*CELL); ctx.lineTo(W,BFOLD*CELL); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle=MUTE; ctx.font="500 20px Geist Mono, monospace"; ctx.fillText(T("FOLD · BUILD INTO THIS ROW","VOUW · BOUW DOOR IN DEZE RIJ"), 20, BFOLD*CELL+32); }
+  }
+  if(opts.ghost){ ctx.globalAlpha=.25; for(const b of opts.ghost){ ctx.fillStyle=colOf(b.c,INK); tile(ctx,b.s,b.r,(b.i%COLS)*CELL,0,CELL); } ctx.globalAlpha=1; }
+  if(opts.seeds){ ctx.strokeStyle=INK; ctx.lineWidth=3; for(const i of opts.seeds) ctx.strokeRect((i%COLS)*CELL+7,Math.floor(i/COLS)*CELL+7,CELL-14,CELL-14); }
+  for(const b of cells){ ctx.fillStyle=colOf(b.c,INK); tile(ctx,b.s,b.r,(b.i%COLS)*CELL,Math.floor(b.i/COLS)*CELL,CELL); }
+}
+// the previous part's bottom row, shown faintly in the top row of the next part
+function ghostRow(prev){ const g=(prev||[]).filter(b=>Math.floor(b.i/COLS)===BFOLD).map(b=>({...b,i:b.i%COLS})); return g; }
+function mountGrid(canvas, d, opts){
+  const ctx=canvas.getContext("2d"); let down=null, raf=0;
+  const redraw=()=>{ raf=0; paintBlocks(ctx, d.cells, opts); };
+  const req=()=>{ if(!raf) raf=requestAnimationFrame(redraw); };
+  const cellAt=e=>{ const r=canvas.getBoundingClientRect(), q=Math.floor((e.clientX-r.left)/r.width*COLS), w=Math.floor((e.clientY-r.top)/r.height*ROWS); return q<0||w<0||q>=COLS||w>=ROWS?-1:w*COLS+q; };
+  const apply=(i,tap)=>{ if(i<0) return false; const k=d.cells.findIndex(b=>b.i===i);
+    if(BLK.x){ if(k<0) return false; d.cells.splice(k,1); return true; }
+    if(k>=0){ const b=d.cells[k];
+      if(tap && b.s===BLK.s && b.s!=="s" && b.s!=="c"){ b.r=(b.r+1)%4; BLK.r=b.r; blkIcons(); return true; }
+      if(b.s===BLK.s && b.c===PEN.c && (b.r===BLK.r||b.s==="s"||b.s==="c")) return false;
+      d.cells.splice(k,1); }
+    d.cells.push({i,s:BLK.s,r:BLK.r,c:PEN.c}); return true; };
+  canvas.addEventListener("pointerdown",e=>{ if(down) return; canvas.setPointerCapture(e.pointerId); const snap=JSON.stringify(d.cells); const i=cellAt(e); down={last:i};
+    if(apply(i,true)){ d.hist.push(snap); if(d.hist.length>40) d.hist.shift(); down.snap=true; } else down.snap0=snap; req(); e.preventDefault(); });
+  canvas.addEventListener("pointermove",e=>{ if(!down) return; const evs=e.getCoalescedEvents?e.getCoalescedEvents():[e];
+    for(const ev of evs){ const i=cellAt(ev); if(i===down.last) continue; down.last=i; if(apply(i,false) && !down.snap){ d.hist.push(down.snap0); down.snap=true; } } req(); });
+  const end=()=>{ if(!down) return; down=null; opts.onChange?.(); persist(); };
+  canvas.addEventListener("pointerup",end); canvas.addEventListener("pointercancel",end);
+  new ResizeObserver(()=>{ sizeCanvas(canvas); redraw(); }).observe(canvas);
+  return { redraw:req };
+}
+function shapeSvg(s,r){
+  if(s==="s") return `<svg viewBox="0 0 20 20"><rect x="3" y="3" width="14" height="14"/></svg>`;
+  if(s==="c") return `<svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="7"/></svg>`;
+  const P=[[3,3],[17,3],[17,17],[3,17]];
+  if(s==="t") return `<svg viewBox="0 0 20 20"><polygon points="${P.filter((_,k)=>k!==(r+2)%4).map(p=>p.join(",")).join(" ")}"/></svg>`;
+  const C=P[r], a0=r*Math.PI/2, a1=a0+Math.PI/2, pt=a=>[C[0]+14*Math.cos(a),C[1]+14*Math.sin(a)].map(v=>Math.round(v)).join(" ");
+  return `<svg viewBox="0 0 20 20"><path d="M${C.join(" ")} L${pt(a0)} A14 14 0 0 1 ${pt(a1)} Z"/></svg>`;
+}
+function blocksBar(){
+  const names={s:T("Square","Vierkant"),t:T("Triangle","Driehoek"),q:T("Quarter circle","Kwartcirkel"),c:T("Circle","Cirkel")};
+  const shapes=["s","t","q","c"].map(s=>`<button class="pen tool" data-blk="${s}" aria-pressed="${!BLK.x&&BLK.s===s}" aria-label="${names[s]}" title="${names[s]}" onclick="setBlk('${s}')">${shapeSvg(s,BLK.r)}</button>`).join("");
+  const turnB=`<button class="pen tool" aria-label="${T("Turn the shape","Draai de vorm")}" title="${T("Turn","Draai")}" onclick="turnBlk()"><svg viewBox="0 0 20 20"><path d="M10 3a7 7 0 1 0 7 7h-2.2A4.8 4.8 0 1 1 10 5.2V8l4-3.6L10 1z"/></svg></button>`;
+  const eraser=`<button class="pen tool" data-blk="x" aria-pressed="${BLK.x}" aria-label="${T("Eraser","Gom")}" title="${T("Eraser","Gom")}" onclick="setBlk('x')"><svg viewBox="0 0 20 20"><path d="M3 15l7-10 7 5-5 7H6z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></button>`;
+  const cols=PEN_C.map((c,i)=>`<button class="pen sw" data-pen-c="${i}" aria-pressed="${PEN.c===i}" aria-label="${i?T("Colour ","Kleur ")+c:T("Cobalt","Kobalt")}" onclick="setPen('c',${i})"><i style="background:${c==="ink"?"var(--ink)":c}"></i></button>`).join("");
+  return `<div class="pens"><div class="row" style="gap:2px">${shapes}${turnB}${eraser}</div><span class="pensep"></span><div class="row" style="gap:2px">${cols}</div></div>`;
+}
+function setBlk(s){ if(s==="x") BLK.x=!BLK.x; else { BLK.x=false; BLK.s=s; } document.querySelectorAll("[data-blk]").forEach(b=>b.setAttribute("aria-pressed", b.dataset.blk==="x"?BLK.x:(!BLK.x&&b.dataset.blk===BLK.s))); }
+function turnBlk(){ BLK.r=(BLK.r+1)%4; if(BLK.s==="s"||BLK.s==="c"){ BLK.x=false; BLK.s="t"; setBlk("t"); } blkIcons(); }
+function blkIcons(){ document.querySelectorAll("[data-blk]").forEach(b=>{ const s=b.dataset.blk; if(s==="t"||s==="q") b.innerHTML=shapeSvg(s,BLK.r); }); }
 
 // ---------- cheat sheet: famous exquisite corpses (images stay on the museums' sites) ----------
 const MASTERS = [
@@ -401,14 +555,21 @@ async function api(path, opts={}){
   const txt=await r.text(); return txt?JSON.parse(txt):null;
 }
 const newId=()=>Array.from(crypto.getRandomValues(new Uint8Array(8)),b=>"abcdefghijkmnpqrstuvwxyz23456789"[b%32]).join("");
-const startStr = g => g.start.map(p=>p.map(Math.round).join(",")).join("|");
-const turnRow = (g,n,t) => ({game_id:g.id, n, strokes:g.edition==="draw"?enc(t.strokes||[],t.st):"", text:t.text||"", name:t.name||""});
+// start: "B" + seed cells for blocks, "R" in front when the game deals rules
+const startStr = g => isBlocks(g) ? "B"+g.start.join(",") : (g.rules?"R":"")+g.start.map(p=>p.map(Math.round).join(",")).join("|");
+function parseStart(s){ s=s||""; const f=s[0]; const blocks=f==="B", rules=f==="R"; if(blocks||rules) s=s.slice(1);
+  return { tech:blocks?"blocks":"pen", rules, start: blocks ? s.split(",").filter(Boolean).map(Number) : (s?s.split("|").map(p=>p.split(",").map(Number)):[]) }; }
+const turnBody = (g,t) => g.edition!=="draw" ? "" : isBlocks(g) ? encCells(t.cells||[]) : enc(t.strokes||[],t.st);
+const withRule = (t,body) => t.rule ? "@"+t.rule+(body?"|"+body:"") : body;
+const turnRow = (g,n,t) => ({game_id:g.id, n, strokes:withRule(t,turnBody(g,t)), text:t.text||"", name:t.name||""});
+const turnFrom = (g,body,extra) => g.edition==="draw" ? (isBlocks(g)?{cells:decCells(body)}:decS(body)) : {};
 const dbCreate = g => api("games",{method:"POST",body:JSON.stringify({id:g.id,edition:g.edition,parts:g.parts,start:startStr(g)})});
 const dbTurn = (g,n,t) => api("turns",{method:"POST",body:JSON.stringify(turnRow(g,n,t))});
 const dbCount = async id => (await api(`turns?game_id=eq.${id}&select=n`)).length;
 function rowToGame(r, id){
-  const turns=[...(r.turns||[])].sort((a,b)=>a.n-b.n).map(t=>r.edition==="draw"?{...decS(t.strokes),name:t.name}:{text:t.text,name:t.name});
-  return { id, edition:r.edition, parts:r.parts, theme:"", start:r.start?r.start.split("|").map(p=>p.split(",").map(Number)):[], turns };
+  const ps=parseStart(r.start), g={ id, edition:r.edition, parts:r.parts, theme:"", tech:ps.tech, rules:ps.rules, start:ps.start };
+  g.turns=[...(r.turns||[])].sort((a,b)=>a.n-b.n).map(t=>{ const {rule,rest}=splitRule(t.strokes); return {...turnFrom(g,rest), text:t.text, name:t.name, rule}; });
+  return g;
 }
 async function dbLoad(id){ const a=await api(`games?id=eq.${id}&select=edition,parts,start,turns(n,strokes,text,name)`); if(!a||!a[0]) return null;
   const g=rowToGame(a[0],id); if(g.edition==="words"){ try{ const d=await api(`ai_drawings?game_id=eq.${id}&select=strokes,title`); if(d?.[0]) g.ai={strokes:dec(d[0].strokes),title:d[0].title}; const w=await api(`ai_wall?game_id=eq.${id}&select=game_id`); g.aiOnWall=!!w?.length; }catch(_){} }
@@ -487,7 +648,7 @@ async function loadWall(){
     ${e.edition==="draw"? e.turns.map((t,j)=>`<canvas data-ex="${i}" data-p="${j}"></canvas>`).join("") : `<div class="wq">${e.turns.map(t=>esc(t.text)).join(" ")}</div>`}
     <div class="tg">${esc(e.turns.map(t=>t.name).filter(Boolean).join(" · ")||(e.edition==="draw"?T("Drawing","Tekenen"):T("Words","Woorden")))}</div></button>`).join("");
   w.querySelectorAll("canvas[data-ai]").forEach(c=>paintAI(c, WALL[+c.dataset.ai]));
-  w.querySelectorAll("canvas[data-ex]").forEach(c=>{ sizeCanvas(c); paint(c.getContext("2d"), WALL[+c.dataset.ex].turns[+c.dataset.p].strokes, {st:WALL[+c.dataset.ex].turns[+c.dataset.p].st, start:+c.dataset.p===0?WALL[+c.dataset.ex].start:null}); });
+  w.querySelectorAll("canvas[data-ex]").forEach(c=>{ sizeCanvas(c); paintPart(c.getContext("2d"), WALL[+c.dataset.ex], +c.dataset.p); });
 }
 function openWall(i){ S.mode="wall"; S.game={...WALL[i],inDB:true}; LINK=location.origin+location.pathname+"#g-"+S.game.id; go("reveal"); }
 async function yourGames(){
@@ -505,7 +666,7 @@ const b64u = bytes => btoa(String.fromCharCode(...bytes)).replace(/\+/g,"-").rep
 const unb64u = str => Uint8Array.from(atob(str.replace(/-/g,"+").replace(/_/g,"/")), c=>c.charCodeAt(0));
 async function pipe(bytes, stream){ const out=await new Response(new Blob([bytes]).stream().pipeThrough(stream)).arrayBuffer(); return new Uint8Array(out); }
 async function packGame(g){
-  const o={v:1,e:g.edition[0],t:g.theme,n:g.parts,s:g.start.map(p=>p.map(Math.round).join(",")).join("|"),p:g.turns.map(t=>g.edition==="draw"?[enc(t.strokes,t.st),t.name||""]:[t.text,t.name||""])};
+  const o={v:1,e:g.edition[0],t:g.theme,n:g.parts,s:startStr(g),p:g.turns.map(t=>[g.edition==="draw"?turnBody(g,t):t.text,t.name||"",t.rule||""])};
   const raw=new TextEncoder().encode(JSON.stringify(o));
   try{ return "z"+b64u(await pipe(raw,new CompressionStream("deflate-raw"))); }catch(e){ return "j"+b64u(raw); }
 }
@@ -514,8 +675,9 @@ async function unpackGame(str){
   const raw = kind==="z" ? await pipe(bytes,new DecompressionStream("deflate-raw")) : bytes;
   const o=JSON.parse(new TextDecoder().decode(raw)), draw=o.e==="d";
   if(![3,4].includes(o.n)) throw new Error("bad game");
-  return { id:"link", edition:draw?"draw":"words", theme:o.t, parts:o.n, start:o.s?o.s.split("|").map(p=>p.split(",").map(Number)):[],
-    turns:o.p.slice(0,o.n).map(([a,name])=>draw?{...decS(a),name:String(name).slice(0,24)}:{text:String(a).slice(0,70),name:String(name).slice(0,24)}) };
+  const ps=parseStart(o.s), g={ id:"link", edition:draw?"draw":"words", theme:o.t, parts:o.n, tech:ps.tech, rules:ps.rules, start:ps.start };
+  g.turns=o.p.slice(0,o.n).map(([a,name,rule])=>({...(draw?turnFrom(g,String(a)):{text:String(a).slice(0,70)}), name:String(name).slice(0,24), rule:ruleById(rule)?rule:undefined}));
+  return g;
 }
 let LINK="";
 const gameLink = () => LINK;
@@ -552,7 +714,7 @@ async function shareLink(text, btn){
 }
 
 // ---------- screens ----------
-function go(screen){ if(screen!=="waiting") stopPoll(); if(screen!=="reveal" && S.screen==="reveal") document.title=T("Exquisite Corpse","Cadavre exquis"); S.screen=screen; render(); scrollTo(0,0); if(S.game) persist(); }
+function go(screen){ if(screen!=="waiting") stopPoll(); clearInterval(ruleTick); if(screen!=="reveal" && S.screen==="reveal") document.title=T("Exquisite Corpse","Cadavre exquis"); S.screen=screen; render(); scrollTo(0,0); if(S.game) persist(); }
 
 function render(){
   const app=$("#app");
@@ -568,6 +730,7 @@ after.home=()=>{ loadWall(); yourGames(); };
 function home(){
   return `
   <div class="stack" style="gap:6px">
+    <img src="icons/icon.svg" alt="" width="56" height="56" style="border-radius:13px;margin-bottom:6px">
     <span class="lab">OOJO game</span>
     <h1>${T("Exquisite<br><em>corpse</em>","Cadavre<br><em>exquis</em>")}</h1>
   </div>
@@ -575,8 +738,15 @@ function home(){
   <button class="ghost chip" style="padding-left:0" onclick="openCheat()">${T("Cheat: look at the masters","Spiekbrief: kijk naar de meesters")}</button></div>
   <p>${T("Each player adds one part of a figure or a sentence without seeing the rest. Only the fold gives a hint. The whole thing is revealed at the end.","Elke speler voegt een deel van een figuur of een zin toe zonder de rest te zien. Alleen de vouw geeft een hint. Op het einde wordt alles onthuld.")}</p>
 
+  ${tabsHtml()}
   ${resumeBtn()}
-  <div class="stack"><span class="lab">${T("Edition","Editie")}</span>
+  ${S.tab==="blocks" ? `<div class="stack"><span class="lab">${T("Blocks · build it like a game","Blokken · bouw het als een game")}</span>
+    <div class="steps" aria-label="${T("How to play Blocks","Zo speel je Blokken")}">
+      <div><b>1</b><span>${T("<strong>Build a head.</strong> Tap the grid to place blocks, start at the squares. Tap a block again to turn it. Run a few blocks into the bottom row.","<strong>Bouw een hoofd.</strong> Tik op het rooster om blokken te plaatsen, begin bij de vierkantjes. Tik nog eens om een blok te draaien. Laat een paar blokken doorlopen tot in de onderste rij.")}</span></div>
+      <div><b>2</b><span>${T("<strong>Build a body.</strong> You only see a faint copy of the bottom row above. Build on from there.","<strong>Bouw een lijf.</strong> Je ziet alleen een vage kopie van de onderste rij erboven. Bouw daar verder.")}</span></div>
+      <div><b>3</b><span>${T("<strong>Build legs.</strong> Same again.","<strong>Bouw benen.</strong> Net hetzelfde.")}</span></div>
+      <div class="end">${T("Then unfold it and watch the creature build itself, block by block.","Vouw dan open en kijk hoe het wezen zichzelf bouwt, blok per blok.")}</div>
+    </div></div>` : `<div class="stack"><span class="lab">${T("Edition","Editie")}</span>
     <div class="seg">
       <button aria-pressed="${S.edition==="draw"}" onclick="S.edition='draw';render()">${T("Drawing","Tekenen")}</button>
       <button aria-pressed="${S.edition==="words"}" onclick="S.edition='words';render()">${T("Words","Woorden")}</button>
@@ -590,7 +760,9 @@ function home(){
       ${[0,1,2].map(i=>`<div><b>${i+1}</b><span><strong>${WORD_PARTS[3][i]}?</strong> <i>${WORD_HELP[3][i][1]}</i></span></div>`).join("")}
       <div class="end">${T("One player per line. You only see the last word before yours. Then read the whole sentence out loud.","Eén speler per regel. Je ziet alleen het laatste woord voor het jouwe. Lees daarna de hele zin hardop voor.")}</div>
     </div>`}
-  </div>
+    <span class="lab" style="margin-top:6px">${T("New · every part deals you a surprise rule","Nieuw · elk deel geeft je een verrassingsregel")}</span>
+    <div class="teaser">${(S.edition==="draw"?RULES_D:RULES_W).map(r=>`<span>${ruleT(r)[0]}</span>`).join("")}</div>
+  </div>`}
 
   <div class="stack">
     <button class="solid wide" onclick="startLocal()">${T("Play on this phone · pass it around","Speel op deze gsm · geef hem door")}</button>
@@ -612,19 +784,34 @@ async function startRemote(){
 function turn(){
   const g=S.game, n=g.turns.length, names=partNames(g), last=n===g.parts-1;
   const t=THEMES[g.theme]||THEMES["Dream zoo"];
-  if(!S.draft) S.draft={strokes:[], st:[], text:"", name:store.get("ec-name"), kws: g.edition==="draw"? pick(t.nouns,4) : kwFor(n,t)};
+  if(!S.draft) S.draft={strokes:[], st:[], cells:[], hist:[], text:"", name:store.get("ec-name"), kws: g.edition==="draw"? pick(t.nouns,4) : kwFor(n,t), rule: g.rules?dealRule(g):undefined, t0:0};
   const d=S.draft;
-  const top=`<div class="topbar"><span class="lab">${g.edition==="draw"?T("Drawing","Tekenen"):T("Words","Woorden")}</span><div class="row" style="gap:2px"><button class="ghost chip" onclick="openCheat()">${T("Cheat","Spieken")}</button>${confirmBtn("quit",T("Quit","Stoppen"),T("Quit game?","Spel stoppen?"),"ghost chip","quitGame()")}</div></div>`;
+  const top=`<div class="topbar"><span class="lab">${edName(g)}</span><div class="row" style="gap:2px"><button class="ghost chip" onclick="openCheat()">${T("Cheat","Spieken")}</button>${confirmBtn("quit",T("Quit","Stoppen"),T("Quit game?","Spel stoppen?"),"ghost chip","quitGame()")}</div></div>`;
   const prog=top+`<div class="progress">${Array.from({length:g.parts},(_,i)=>`<i class="${i<=n?"on":""}"></i>`).join("")}</div>`;
   const kw=`<div class="stack"><div class="row" style="justify-content:space-between"><span class="lab">Need an idea? · ${esc(g.theme)}</span><button class="ghost chip" onclick="reshuffle()">Shuffle</button></div>
     <div class="chips">${d.kws.map(k=>`<button class="chip kw" onclick="useKw(this.textContent)">${esc(k)}</button>`).join("")}</div></div>`;
   const sign=`<input type="text" id="sign" maxlength="24" placeholder="${T("Sign your part (optional)","Onderteken je deel (mag)")}" value="${esc(d.name)}" oninput="S.draft.name=this.value">`;
+  if(isBlocks(g)){
+    d.cells ||= []; d.hist ||= [];
+    const intro = n===0 ? T(`Start from the three squares. Build the <b>${names[n].toLowerCase()}</b> of a creature, block by block.`,`Begin bij de drie vierkantjes. Bouw blok per blok het <b>${names[n].toLowerCase()}</b> van een wezen.`) :
+      T(`The faint blocks at the top are the bottom row of the last part. Build on from there: the <b>${names[n].toLowerCase()}</b>.`,`De vage blokken bovenaan zijn de onderste rij van het vorige deel. Bouw daar verder: <b>${names[n].toLowerCase()}</b>.`);
+    return `${prog}
+    <div class="stack" style="gap:4px"><span class="lab">${T("Part","Deel")} ${n+1} ${T("of","van")} ${g.parts}</span><h2>${names[n]}</h2></div>
+    <p>${intro}${last?"":T(" Run some blocks into the bottom row."," Laat een paar blokken doorlopen tot in de onderste rij.")}</p>
+    ${blocksBar()}
+    <div class="sheet"><canvas id="pad"></canvas></div>
+    <div class="tools"><div class="row"><button onclick="undo()">${T("Undo","Ongedaan")}</button>${confirmBtn("clear",T("Clear","Wissen"),T("Clear all?","Alles wissen?"),"ghost","clearPad()")}</div>
+      <span class="foldnote" id="cnt"></span></div>
+    ${sign}
+    <button class="solid wide" id="done" onclick="finishTurn()">${last?T("Finish and reveal","Klaar, onthul"):T("Fold and pass on","Vouw en geef door")}</button>`;
+  }
   if(g.edition==="draw"){
     const intro = n===0 ? T(`Start from the four dots. Draw the <b>${names[n].toLowerCase()}</b> of a creature.`,`Begin bij de vier stippen. Teken het <b>${names[n].toLowerCase()}</b> van een wezen.`) :
       T(`The dots at the top are where the last player's lines cross the fold. Pick them up and draw the <b>${names[n].toLowerCase()}</b>.`,`De stippen bovenaan zijn de plekken waar de lijnen van de vorige speler de vouw kruisen. Ga daar verder en teken nu: <b>${names[n].toLowerCase()}</b>.`);
     return `${prog}
     <div class="stack" style="gap:4px"><span class="lab">${T("Part","Deel")} ${n+1} ${T("of","van")} ${g.parts}</span><h2>${names[n]}</h2></div>
     <p>${intro}${last?"":T(" Carry some lines down past the fold."," Laat een paar lijnen doorlopen tot over de vouw.")}</p>
+    ${ruleCard()}
     ${penBar()}
     <div class="sheet"><canvas id="pad"></canvas></div>
     <div class="tools"><div class="row"><button onclick="undo()">${T("Undo","Ongedaan")}</button>${confirmBtn("clear",T("Clear","Wissen"),T("Clear all?","Alles wissen?"),"ghost","clearPad()")}</div>
@@ -636,8 +823,9 @@ function turn(){
   return `${prog}
     <div class="stack" style="gap:4px"><span class="lab">${T("Part","Deel")} ${n+1} ${T("of","van")} ${g.parts}</span><h2>${WORD_PARTS[g.parts][n]}</h2></div>
     <p>${(WORD_HELP[g.parts]||WORD_HELP[3])[n][0]}</p>
+    ${ruleCard()}
     ${n>0?`<div class="wordfold">…<b>${esc(prev)}</b></div>`:""}
-    <textarea id="txt" maxlength="70" rows="2" placeholder="${esc((WORD_HELP[g.parts]||WORD_HELP[3])[n][1])}" oninput="S.draft.text=this.value;persist();$('#done').disabled=!this.value.trim()">${esc(d.text)}</textarea>
+    <textarea id="txt" maxlength="70" rows="2" placeholder="${esc((WORD_HELP[g.parts]||WORD_HELP[3])[n][1])}" oninput="wordsInput(this)">${esc(d.text)}</textarea>
     ${sign}
     <button class="solid wide" id="done" ${d.text.trim()?"":"disabled"} onclick="finishTurn()">${last?T("Finish and reveal","Klaar, onthul"):T("Fold and pass on","Vouw en geef door")}</button>`;
 }
@@ -649,15 +837,77 @@ function kwFor(n,t){
 let pad=null;
 after.turn=()=>{
   const g=S.game, n=g.turns.length;
-  if(g.edition!=="draw"){ return; }
+  updRule(); if(S.draft.t0) ruleTicking();
+  if(g.edition!=="draw"){ const ta=$("#txt"); if(ta && timeUp()) ta.readOnly=true; updWordsDone(); return; }
+  if(isBlocks(g)){
+    const prev=n>0?ghostRow(g.turns[n-1].cells):null;
+    const opts={ guides:true, last:n===g.parts-1, seeds:n===0?g.start:(prev&&!prev.length?seedRow():null), ghost:prev, onChange:updCount };
+    pad=mountGrid($("#pad"), S.draft, opts); updCount(); return;
+  }
   S.draft.st ||= S.draft.strokes.map(()=>10);
-  const opts={ guides:true, last:n===g.parts-1, start:n===0?g.start:null, dots:n>0?foldDots(g.turns[n-1].strokes):null, onChange:updCount, st:S.draft.st };
+  const r=ruleById(S.draft.rule);
+  const opts={ guides:true, last:n===g.parts-1, start:n===0?g.start:null, dots:n>0?foldDots(g.turns[n-1].strokes):null, onChange:()=>{ updCount(); updRule(); hideSwap(); }, st:S.draft.st,
+    blind:!!r?.blind, canDraw:canAct, onStart:startTimer,
+    onBlocked:()=>toast(timeUp()?T("Time's up. Fold and pass it on.","De tijd is om. Vouw en geef door."):T("No lines left. Fold and pass it on.","Geen lijnen meer. Vouw en geef door.")) };
   pad=mountPad($("#pad"), S.draft.strokes, opts); updCount();
 };
-function updCount(){ const c=$("#cnt"); if(!c) return; const g=S.game, n=g.turns.length; if(n===g.parts-1){ c.textContent=""; $("#done").disabled=!S.draft.strokes.length; return; }
+// no blocks reached the fold: offer three spots in the top row to start from
+function seedRow(){ return pick([1,3,5,7,8],3); }
+
+// ---------- rule card and its counter ----------
+let ruleTick=null;
+function ruleCard(){
+  const d=S.draft, r=ruleById(d?.rule); if(!r) return "";
+  const [title,desc]=ruleT(r);
+  return `<div class="rule" id="rule" aria-live="polite"><span class="lab">${T("Your rule","Jouw regel")}</span>
+    <div class="ctr" id="ctr"></div>
+    <span class="rt">${title}</span><span class="rd">${desc}</span>
+    ${d.swapped||d.t0||d.strokes.length||d.text?"":`<button class="ghost ruleswap" id="swap" onclick="swapRule()">${T("Deal me another rule ↻","Geef me een andere regel ↻")}</button>`}
+    ${r.secs?`<div class="timebar"><i id="tbar" style="width:100%"></i></div>`:""}</div>`;
+}
+function hideSwap(){ $("#swap")?.remove(); }
+function swapRule(){ const d=S.draft; d.rule=dealRule(S.game,d.rule); d.swapped=true; persist(); render(); }
+const wordCount = s => s.trim().split(/\s+/).filter(Boolean).length;
+function timeUp(){ const d=S.draft, r=ruleById(d?.rule); return !!(r?.secs && d.t0 && (Date.now()-d.t0)/1000>=r.secs); }
+function canAct(){ const d=S.draft, r=ruleById(d?.rule); if(!r) return true; if(r.lines!=null && d.strokes.length>=r.lines) return false; return !timeUp(); }
+function startTimer(){ const d=S.draft, r=ruleById(d?.rule); if(!r?.secs || d.t0) return; d.t0=Date.now(); hideSwap(); persist(); ruleTicking(); }
+function ruleTicking(){ clearInterval(ruleTick); ruleTick=setInterval(()=>{ if(S.screen!=="turn"){ clearInterval(ruleTick); return; } updRule();
+  if(timeUp()){ clearInterval(ruleTick); const ta=$("#txt"); if(ta){ ta.readOnly=true; ta.blur(); } toast(T("Time's up!","De tijd is om!")); } },200); }
+function updRule(){
+  const el=$("#ctr"), d=S.draft, r=ruleById(d?.rule); if(!el||!r) return;
+  let h="", over=false;
+  if(r.lines!=null){ const left=Math.max(0,r.lines-d.strokes.length); over=left===0;
+    h=`<div class="big">${left}</div><div class="u">${left===1?T("line left","lijn over"):T("lines left","lijnen over")}</div>${r.lines>1?`<div class="pips">${Array.from({length:r.lines},(_,i)=>`<i class="${i<left?"on":""}"></i>`).join("")}</div>`:""}`; }
+  else if(r.secs){ const sl=d.t0?Math.max(0,r.secs-(Date.now()-d.t0)/1000):r.secs, n=Math.ceil(sl); over=d.t0&&sl<=0;
+    h=`<div class="big">${n}</div><div class="u">${d.t0?(over?T("time's up","tijd om"):T("seconds","seconden")):T("on your mark","klaar?")}</div>`;
+    el.classList.toggle("low", !!d.t0 && n<=5 && n>0); const b=$("#tbar"); if(b) b.style.width=(sl/r.secs*100)+"%"; }
+  else if(r.words){ const left=Math.max(0,r.words-wordCount(d.text)); over=left===0;
+    h=`<div class="big">${left}</div><div class="u">${left===1?T("word left","woord over"):T("words left","woorden over")}</div><div class="pips">${Array.from({length:r.words},(_,i)=>`<i class="${i<left?"on":""}"></i>`).join("")}</div>`; }
+  else if(r.noE){ h=`<div class="big" style="text-decoration:line-through;text-decoration-thickness:3px">e</div><div class="u">${d.eHits||0} ${T("caught","gevangen")}</div>`; }
+  else if(r.same){ const ws=d.text.trim().split(/\s+/).filter(Boolean), L=(ws[0]||"")[0]?.toLowerCase()||"", ok=ws.every(w=>w[0].toLowerCase()===L);
+    h=`<div class="big">${L?esc(L.toUpperCase()):"?"}</div><div class="u">${!L?T("your letter","jouw letter"):ok?T("all good","alles goed"):T("not all","niet allemaal")}</div>`; }
+  el.innerHTML=h; $("#rule")?.classList.toggle("over", !!over);
+}
+function sameOk(){ const r=ruleById(S.draft?.rule); if(!r?.same) return true; const ws=S.draft.text.trim().split(/\s+/).filter(Boolean); const L=(ws[0]||"")[0]?.toLowerCase(); return ws.every(w=>w[0].toLowerCase()===L); }
+function updWordsDone(){ const b=$("#done"); if(b) b.disabled=!S.draft.text.trim() || !sameOk(); }
+function wordsInput(ta){
+  const d=S.draft, r=ruleById(d.rule);
+  if(timeUp()){ ta.value=d.text; return; }
+  if(r?.secs && ta.value) startTimer();
+  if(r?.noE && /[eéèêë]/i.test(ta.value)){ d.eHits=(d.eHits||0)+(ta.value.match(/[eéèêë]/gi)||[]).length; ta.value=ta.value.replace(/[eéèêë]/gi,""); ta.classList.remove("shake"); void ta.offsetWidth; ta.classList.add("shake"); }
+  if(r?.words && wordCount(ta.value)>r.words){ ta.value=wordCount(d.text)<=r.words?d.text:ta.value.split(/\s+/).filter(Boolean).slice(0,r.words).join(" ")+" "; ta.classList.remove("shake"); void ta.offsetWidth; ta.classList.add("shake"); }
+  if(ta.value) hideSwap();
+  d.text=ta.value; persist(); updRule(); updWordsDone();
+}
+function updCount(){ const c=$("#cnt"); if(!c) return; const g=S.game, n=g.turns.length;
+  if(isBlocks(g)){ const cs=S.draft.cells, k=cs.filter(b=>Math.floor(b.i/COLS)===BFOLD).length; $("#done").disabled=!cs.length;
+    c.textContent=T(cs.length+" block"+(cs.length===1?"":"s"),cs.length+(cs.length===1?" blok":" blokken"))+(n===g.parts-1?"":T(" · "+k+" at the fold"," · "+k+" aan de vouw")); return; }
+  if(n===g.parts-1){ c.textContent=""; $("#done").disabled=!S.draft.strokes.length; return; }
   const k=S.draft.strokes.filter(s=>s.some((v,i)=>i%2&&v>=FOLD-10)).length; c.textContent=T(k+" line"+(k===1?"":"s")+" at the fold",k+(k===1?" lijn":" lijnen")+" aan de vouw"); $("#done").disabled=!S.draft.strokes.length; }
-function undo(){ S.draft.strokes.pop(); S.draft.st?.pop(); pad?.redraw(); updCount(); persist(); }
-function clearPad(){ S.draft.strokes.length=0; if(S.draft.st) S.draft.st.length=0; pad?.redraw(); updCount(); persist(); toast(T("Cleared","Gewist")); }
+function undo(){ if(isBlocks(S.game)){ const h=S.draft.hist.pop(); if(h!=null) S.draft.cells=JSON.parse(h); pad?.redraw(); updCount(); persist(); return; }
+  S.draft.strokes.pop(); S.draft.st?.pop(); pad?.redraw(); updCount(); persist(); }
+function clearPad(){ if(isBlocks(S.game)){ S.draft.hist.push(JSON.stringify(S.draft.cells)); S.draft.cells=[]; pad?.redraw(); updCount(); persist(); toast(T("Cleared","Gewist")); return; }
+  S.draft.strokes.length=0; if(S.draft.st) S.draft.st.length=0; pad?.redraw(); updCount(); persist(); toast(T("Cleared","Gewist")); }
 function reshuffle(){ const g=S.game, t=THEMES[g.theme]; S.draft.kws = g.edition==="draw"? pick(t.nouns,4) : kwFor(g.turns.length,t); render(); }
 function useKw(k){
   if(S.game.edition==="draw"){ toast("Draw a "+k.toLowerCase()); return; }
@@ -666,6 +916,7 @@ function useKw(k){
 async function finishTurn(){
   const g=S.game, d=S.draft, n=g.turns.length;
   const t={strokes:d.strokes, st:d.st||[], text:d.text.trim(), name:(d.name||"").trim()};
+  if(isBlocks(g)) t.cells=d.cells; if(d.rule) t.rule=d.rule;
   if(t.name) store.set("ec-name", t.name);
   if(S.mode==="remote" && hasDB()){
     $("#done").disabled=true;
@@ -688,16 +939,19 @@ function handoff(){
     <div class="fold-ill"><i></i><i></i></div>
     <span class="lab">${T("Part","Deel")} ${n} ${T("done","klaar")}</span>
     <h2>${T("Fold. Pass the phone to the next player.","Vouw. Geef de gsm aan de volgende speler.")}</h2>
-    <p class="muted">${T(`No peeking. The next player does the ${esc(partNames(g)[n].toLowerCase())} from ${g.edition==="draw"?"the dots at the fold":"the last word"} only.`,`Niet spieken. De volgende speler doet het deel ‘${esc(partNames(g)[n].toLowerCase())}’ en ziet alleen ${g.edition==="draw"?"de stippen aan de vouw":"het laatste woord"}.`)}</p>
+    <p class="muted">${T(`No peeking. The next player does the ${esc(partNames(g)[n].toLowerCase())} from ${foldHint(g)} only.`,`Niet spieken. De volgende speler doet het deel ‘${esc(partNames(g)[n].toLowerCase())}’ en ziet alleen ${foldHint(g)}.`)}</p>
     <button class="solid wide" onclick="go('turn')">${T("I'm the next player","Ik ben de volgende speler")}</button>
   </div>`;
 }
 
 function shareMsg(g){
   const done=g.turns.length, part=partNames(g)[done]?.toLowerCase();
-  return g.edition==="draw"
+  const lr=ruleById(g.turns[done-1]?.rule), tail=lr?" "+T(`My rule was “${ruleT(lr)[0]}”. Yours is a surprise.`,`Mijn regel was “${ruleT(lr)[0]}”. De jouwe is een verrassing.`):"";
+  return (isBlocks(g)
+    ? T(`I just built part ${done} of an exquisite corpse out of blocks. Can you build the ${part} without seeing the rest?`,`Ik bouwde net deel ${done} van een cadavre exquis met blokken. Bouw jij het deel ‘${part}’ zonder de rest te zien?`)
+    : g.edition==="draw"
     ? T(`I just drew part ${done} of an exquisite corpse. Can you draw the ${part} without seeing the rest?`,`Ik tekende net deel ${done} van een cadavre exquis. Teken jij het deel ‘${part}’ zonder de rest te zien?`)
-    : T(`I wrote part ${done} of an exquisite corpse sentence. Can you write the next line blind?`,`Ik schreef deel ${done} van een cadavre-exquiszin. Schrijf jij blind de volgende regel?`);
+    : T(`I wrote part ${done} of an exquisite corpse sentence. Can you write the next line blind?`,`Ik schreef deel ${done} van een cadavre-exquiszin. Schrijf jij blind de volgende regel?`))+tail;
 }
 const shareText = g => shareMsg(g)+" "+gameLink(g);
 const revealMsg = g => g.edition==="draw" ? T("Our exquisite corpse is finished. Unfold it:","Onze cadavre exquis is klaar. Vouw hem open:") : T("Our exquisite corpse sentence is finished. Read it:","Onze cadavre-exquiszin is klaar. Lees hem:");
@@ -706,7 +960,7 @@ function sent(){
   return `<div class="fold-ill"><i></i><i></i></div>
   <div class="stack" style="gap:4px"><span class="lab">${T("Folded","Gevouwen")} · ${g.turns.length} ${T("of","van")} ${g.parts} ${T("parts done","delen klaar")}</span>
   <h2>${T("Now send it to the next player","Stuur het nu naar de volgende speler")}</h2></div>
-  <p>${T(`They will only see ${g.edition==="draw"?"the dots where your lines cross the fold":"your last word"}. Whoever adds the last part gets the reveal and can send it back to everyone.`,`Die ziet alleen ${g.edition==="draw"?"de stippen waar jouw lijnen de vouw kruisen":"jouw laatste woord"}. Wie het laatste deel toevoegt, krijgt de onthulling en kan ze naar iedereen terugsturen.`)}</p>
+  <p>${T(`They will only see ${isBlocks(g)?"the bottom row of your blocks":g.edition==="draw"?"the dots where your lines cross the fold":"your last word"}. Whoever adds the last part gets the reveal and can send it back to everyone.`,`Die ziet alleen ${isBlocks(g)?"de onderste rij van jouw blokken":g.edition==="draw"?"de stippen waar jouw lijnen de vouw kruisen":"jouw laatste woord"}. Wie het laatste deel toevoegt, krijgt de onthulling en kan ze naar iedereen terugsturen.`)}</p>
   <div class="stack">
     ${navigator.share?`<button class="solid wide" onclick="shareLink(shareText(S.game),this)">${T("Share with the next player…","Deel met de volgende speler…")}</button><span class="lab">${T("Or pick an app","Of kies een app")}</span>`:`<span class="lab">${T("Send it with","Stuur het met")}</span>`}
     ${shareGrid(shareMsg(g), link, T("Your turn: exquisite corpse","Jouw beurt: cadavre exquis"))}
@@ -762,7 +1016,7 @@ function join(){
   return `<div class="fold-ill"><i></i><i></i></div>
   <span class="lab">${g.edition==="draw"?T("Drawing","Tekenen"):T("Words","Woorden")}</span>
   <h2>${T(`${who.length?esc(who.join(", "))+" folded":"Someone folded"} this paper for you`,`${who.length?esc(who.join(", "))+" vouwde":"Iemand vouwde"} dit papier voor jou`)}</h2>
-  <p>${T(`You're adding part ${n+1} of ${g.parts}: the <b>${esc(names[n].toLowerCase())}</b>. You won't see what came before, only ${g.edition==="draw"?"the dots at the fold":"the last word"}.`,`Jij voegt deel ${n+1} van ${g.parts} toe: <b>${esc(names[n].toLowerCase())}</b>. Je ziet niet wat ervoor kwam, alleen ${g.edition==="draw"?"de stippen aan de vouw":"het laatste woord"}.`)}</p>
+  <p>${T(`You're adding part ${n+1} of ${g.parts}: the <b>${esc(names[n].toLowerCase())}</b>. You won't see what came before, only ${foldHint(g)}.`,`Jij voegt deel ${n+1} van ${g.parts} toe: <b>${esc(names[n].toLowerCase())}</b>. Je ziet niet wat ervoor kwam, alleen ${foldHint(g)}.`)}</p>
   <button class="solid wide" onclick="S.draft=null;go('turn')">${T("Unfold my part","Open mijn deel")}</button>`;
 }
 
@@ -775,7 +1029,7 @@ function reveal(){
   return `${ex?`<button class="ghost chip" style="align-self:flex-start;padding-left:0" onclick="go('home');setTimeout(()=>$('#wall-top')?.scrollIntoView(),400)">← ${T("Back to the wall","Terug naar de muur")}</button>`:""}
   <div class="stack" style="gap:4px"><span class="lab">${ex?T("From the wall","Van de muur"):T("Unfolded","Opengevouwen")}</span><h2>${T("The reveal","De onthulling")}</h2></div>
   <div class="reveal" id="rv">${body}</div>
-  <div class="credits">${who.map((w,i)=>`<span>${esc(partNames(g)[i])} · ${esc(w)}</span>`).join("")}</div>
+  <div class="credits">${who.map((w,i)=>`<span>${esc(partNames(g)[i])} · ${esc(w)}${g.turns[i].rule&&ruleById(g.turns[i].rule)?" · "+esc(ruleT(ruleById(g.turns[i].rule))[0]):""}</span>`).join("")}</div>
   ${g.edition==="words"?aiBlock(g, ex):""}
   <div class="stack">
     ${hasDB()&&!ex?`<button class="solid wide" ${g.onWall?"disabled":""} onclick="publishToWall(this)">${g.onWall?T("On the wall","Op de muur"):T("Publish to wall","Op de muur zetten")}</button>`:""}
@@ -791,7 +1045,7 @@ after.reveal=()=>{
   const g=S.game;
   const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
   const canv=[...document.querySelectorAll("#rv canvas")];
-  const draw=(c,t)=>{ const i=+c.dataset.i; paint(c.getContext("2d"), partial(g.turns[i].strokes,t), {st:g.turns[i].st, start:i===0?g.start:null, pencil:g.pencil}); };
+  const draw=(c,t)=>paintPart(c.getContext("2d"), g, +c.dataset.i, t);
   canv.forEach(c=>{ sizeCanvas(c); draw(c, reduce?1:0); });
   const secs=[...document.querySelectorAll("#rv .sec")];
   secs.forEach((s,i)=>{
@@ -844,7 +1098,7 @@ async function composeImage(){
   if(g.edition==="draw"){
     c.width=W+M*2; c.height=H*g.parts+M*2+60;
     x.fillStyle="#f4f6fb"; x.fillRect(0,0,c.width,c.height);
-    g.turns.forEach((t,i)=>{ const sc=document.createElement("canvas"); sc.width=W; sc.height=H; paint(sc.getContext("2d"), t.strokes, {st:t.st, start:i===0?g.start:null, pencil:g.pencil, light:true}); x.drawImage(sc,M,M+i*H); });
+    g.turns.forEach((t,i)=>{ const sc=document.createElement("canvas"); sc.width=W; sc.height=H; paintPart(sc.getContext("2d"), g, i, 1, {light:true}); x.drawImage(sc,M,M+i*H); });
   }else{
     c.width=1140; const lines=[]; x.font="68px 'Instrument Serif', serif";
     g.turns.forEach(t=>{ let line=""; for(const w of t.text.split(/\s+/)){ const tr=(line+" "+w).trim(); if(x.measureText(tr).width>c.width-M*2 && line){ lines.push(line); line=w; } else line=tr; } lines.push(line); lines.push(""); });
