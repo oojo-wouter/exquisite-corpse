@@ -1,0 +1,15 @@
+{
+  "name": "Exquisite Corpse",
+  "short_name": "Corpse",
+  "description": "Draw, build or write one part, fold, pass it on, unfold the whole thing together.",
+  "start_url": "../",
+  "scope": "../",
+  "display": "standalone",
+  "background_color": "#0047ab",
+  "theme_color": "#0047ab",
+  "icons": [
+    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png"},
+    {"src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ]
+}
