@@ -105,6 +105,9 @@ textarea{font-family:var(--display);font-size:30px;line-height:1.15;resize:none;
 .rules-played{display:flex;flex-wrap:wrap;gap:4px 10px;margin-top:6px;color:var(--ink)}
 .rules-played span{display:inline-flex;align-items:center;gap:4px}
 .rule .rt .ricon{vertical-align:-2px;margin-right:6px}
+.eyesbtn{display:flex;align-items:center;justify-content:center;gap:10px}
+.eyesbtn[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.eyecnt{font-family:var(--mono);font-size:12px;opacity:.75}
 .wall .tg{font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--grey);padding:8px 12px 10px;border-top:1px dashed var(--line)}
 .wall .wq+.tg{border-top:0}
 .wall canvas.sq{aspect-ratio:1}
@@ -501,6 +504,8 @@ function paintBlocks(ctx, cells, opts={}){
     ctx.fillStyle=INK; ctx.beginPath(); ctx.arc(x+6,y+8,EYE_R*.42,0,7); ctx.fill(); ctx.fillStyle="#ffffff"; ctx.beginPath(); ctx.arc(x+12,y+1,EYE_R*.12,0,7); ctx.fill(); }
 }
 // the previous part's bottom row, shown faintly in the top row of the next part
+function cellsBetween(a,b){ let x0=a%COLS,y0=Math.floor(a/COLS); const x1=b%COLS,y1=Math.floor(b/COLS), dx=Math.abs(x1-x0), dy=-Math.abs(y1-y0), sx=x0<x1?1:-1, sy=y0<y1?1:-1; let e=dx+dy; const out=[];
+  for(;;){ if(x0===x1&&y0===y1) break; const e2=2*e; if(e2>=dy){ e+=dy; x0+=sx; } if(e2<=dx){ e+=dx; y0+=sy; } out.push(y0*COLS+x0); } return out; }
 function ghostRow(prev){ return (prev||[]).filter(b=>Math.floor(b.i/COLS)+(b.z||1)-1===BFOLD).map(b=>({s:b.s,r:b.r,c:b.c,i:b.i%COLS})); }
 function mountGrid(canvas, d, opts){
   const ctx=canvas.getContext("2d"); let down=null, raf=0;
@@ -517,12 +522,15 @@ function mountGrid(canvas, d, opts){
   canvas.addEventListener("pointerdown",e=>{ if(down) return;
     if(BLK.eye && opts.head){ const r=canvas.getBoundingClientRect(), x=(e.clientX-r.left)/r.width*W, y=(e.clientY-r.top)/r.height*H, k=d.eyes.findIndex(p=>Math.hypot(p[0]-x,p[1]-y)<EYE_R+8);
       if(k<0 && d.eyes.length>=2){ toast(T("Two eyes is the limit. Tap an eye to remove it.","Twee ogen is het maximum. Tik op een oog om het weg te halen.")); return; }
-      d.hist.push(blkSnap(d)); if(k>=0) d.eyes.splice(k,1); else d.eyes.push([Math.max(EYE_R,Math.min(W-EYE_R,x)),Math.max(EYE_R,Math.min(H-EYE_R,y))]);
+      d.hist.push(blkSnap(d)); if(k>=0) d.eyes.splice(k,1); else d.eyes.push([Math.max(EYE_R,Math.min(W-EYE_R,x)),Math.max(EYE_R,Math.min(H-EYE_R,y))]); if(k<0 && d.eyes.length>=2) setBlk(BLK.s);
       req(); opts.onChange?.(); persist(); e.preventDefault(); return; }
     canvas.setPointerCapture(e.pointerId); const snap=blkSnap(d); const i=cellAt(e); down={last:i};
     if(apply(i,true)){ d.hist.push(snap); if(d.hist.length>40) d.hist.shift(); down.snap=true; } else down.snap0=snap; req(); e.preventDefault(); });
   canvas.addEventListener("pointermove",e=>{ if(!down) return; const evs=e.getCoalescedEvents?e.getCoalescedEvents():[e];
-    for(const ev of evs){ const i=cellAt(ev); if(i===down.last) continue; down.last=i; if(apply(i,false) && !down.snap){ d.hist.push(down.snap0); down.snap=true; } } req(); });
+    for(const ev of evs){ const i=cellAt(ev); if(i===down.last||i<0) continue;
+      // fill the cells between the last one and this one, so a fast swipe leaves no gaps
+      const path=down.last>=0?cellsBetween(down.last,i):[i]; down.last=i;
+      for(const c of path) if(apply(c,false) && !down.snap){ d.hist.push(down.snap0); down.snap=true; } } req(); });
   const end=()=>{ if(!down) return; down=null; opts.onChange?.(); persist(); };
   canvas.addEventListener("pointerup",end); canvas.addEventListener("pointercancel",end);
   new ResizeObserver(()=>{ sizeCanvas(canvas); redraw(); }).observe(canvas);
@@ -543,11 +551,15 @@ function blocksBar(head){
   const turnB=`<button class="pen tool" aria-label="${T("Turn the shape","Draai de vorm")}" title="${T("Turn","Draai")}" onclick="turnBlk()"><svg viewBox="0 0 20 20"><path d="M10 3a7 7 0 1 0 7 7h-2.2A4.8 4.8 0 1 1 10 5.2V8l4-3.6L10 1z"/></svg></button>`;
   const eraser=`<button class="pen tool" data-blk="x" aria-pressed="${BLK.x}" aria-label="${T("Eraser","Gom")}" title="${T("Eraser","Gom")}" onclick="setBlk('x')"><svg viewBox="0 0 20 20"><path d="M3 15l7-10 7 5-5 7H6z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></button>`;
   const cols=PEN_C.map((c,i)=>`<button class="pen sw" data-pen-c="${i}" aria-pressed="${PEN.c===i}" aria-label="${i?T("Colour ","Kleur ")+c:T("Cobalt","Kobalt")}" onclick="setPen('c',${i})"><i style="background:${c==="ink"?"var(--ink)":c}"></i></button>`).join("");
-  const eyeB=head?`<button class="pen tool" data-blk="eye" aria-pressed="${BLK.eye}" aria-label="${T("Eyes","Ogen")}" title="${T("Eyes: tap to place, two at most","Ogen: tik om te plaatsen, maximum twee")}" onclick="setBlk('eye')"><svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="7.5" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="11" cy="11.5" r="3.2"/></svg></button>`:"";
-  return `<div class="pens"><div class="row" style="gap:2px">${shapes}${turnB}${eraser}${eyeB}</div><span class="pensep"></span><div class="row" style="gap:2px">${cols}</div></div>`;
+  return `<div class="pens"><div class="row" style="gap:2px">${shapes}${turnB}${eraser}</div><span class="pensep"></span><div class="row" style="gap:2px">${cols}</div></div>`;
 }
+// big, labelled eye switch for the head part
+function eyesBtn(){ const k=S.draft?.eyes?.length||0;
+  return `<button class="wide eyesbtn" data-blk="eye" aria-pressed="${BLK.eye}" onclick="setBlk('eye')"><svg viewBox="0 0 20 20" width="22" height="22" aria-hidden="true"><circle cx="10" cy="10" r="7.5" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="11" cy="11.5" r="3.2" fill="currentColor"/></svg>
+    <span id="eyelab">${BLK.eye?T("Tap the head to place an eye","Tik op het hoofd om een oog te zetten"):T("Add eyes","Ogen toevoegen")}</span><span class="eyecnt" id="eyecnt">${k}/2</span></button>`; }
+function updEyes(){ const l=$("#eyelab"), c=$("#eyecnt"); if(l) l.textContent=BLK.eye?T("Tap the head to place an eye","Tik op het hoofd om een oog te zetten"):T("Add eyes","Ogen toevoegen"); if(c) c.textContent=(S.draft?.eyes?.length||0)+"/2"; }
 function setBlk(s){ if(s==="x"){ BLK.x=!BLK.x; BLK.eye=false; } else if(s==="eye"){ BLK.eye=!BLK.eye; BLK.x=false; } else { BLK.x=false; BLK.eye=false; BLK.s=s; }
-  document.querySelectorAll("[data-blk]").forEach(b=>{ const k=b.dataset.blk; b.setAttribute("aria-pressed", k==="x"?BLK.x:k==="eye"?BLK.eye:(!BLK.x&&!BLK.eye&&k===BLK.s)); }); }
+  document.querySelectorAll("[data-blk]").forEach(b=>{ const k=b.dataset.blk; b.setAttribute("aria-pressed", k==="x"?BLK.x:k==="eye"?BLK.eye:(!BLK.x&&!BLK.eye&&k===BLK.s)); }); updEyes(); }
 function turnBlk(){ BLK.eye=false; BLK.r=(BLK.r+1)%4; if(BLK.s==="s"||BLK.s==="c"){ BLK.x=false; BLK.s="t"; setBlk("t"); } blkIcons(); }
 function blkIcons(){ document.querySelectorAll("[data-blk]").forEach(b=>{ const s=b.dataset.blk; if(s==="t"||s==="q") b.innerHTML=shapeSvg(s,BLK.r); }); }
 
@@ -835,7 +847,7 @@ function turn(){
     return `${prog}
     <div class="stack" style="gap:4px"><span class="lab">${T("Part","Deel")} ${n+1} ${T("of","van")} ${g.parts}</span><h2>${names[n]}</h2></div>
     <p>${intro}${last?"":T(" Run some blocks into the bottom row."," Laat een paar blokken doorlopen tot in de onderste rij.")}</p>
-    ${blocksBar(n===0)}${n===0?`<p class="muted" style="font-size:13px;margin-top:-8px">${T("Tip: the eye button adds two round eyes on top of your blocks.","Tip: met de oogknop zet je twee ronde ogen bovenop je blokjes.")}</p>`:""}
+    ${blocksBar(n===0)}${n===0?eyesBtn():""}
     <div class="sheet"><canvas id="pad"></canvas></div>
     <div class="tools"><div class="row"><button onclick="undo()">${T("Undo","Ongedaan")}</button>${confirmBtn("clear",T("Clear","Wissen"),T("Clear all?","Alles wissen?"),"ghost","clearPad()")}</div>
       <span class="foldnote" id="cnt"></span></div>
@@ -936,7 +948,7 @@ function wordsInput(ta){
   if(ta.value) hideSwap();
   d.text=ta.value; persist(); updRule(); updWordsDone();
 }
-function updCount(){ const c=$("#cnt"); if(!c) return; const g=S.game, n=g.turns.length;
+function updCount(){ updEyes(); const c=$("#cnt"); if(!c) return; const g=S.game, n=g.turns.length;
   if(isBlocks(g)){ const cs=S.draft.cells, k=cs.filter(b=>Math.floor(b.i/COLS)===BFOLD).length; $("#done").disabled=!cs.length;
     c.textContent=T(cs.length+" block"+(cs.length===1?"":"s"),cs.length+(cs.length===1?" blok":" blokken"))+(n===g.parts-1?"":T(" · "+k+" at the fold"," · "+k+" aan de vouw")); return; }
   if(n===g.parts-1){ c.textContent=""; $("#done").disabled=!S.draft.strokes.length; return; }
