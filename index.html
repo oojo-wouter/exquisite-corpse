@@ -101,6 +101,10 @@ textarea{font-family:var(--display);font-size:30px;line-height:1.15;resize:none;
 .wall>button:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
 .wall canvas{display:block;width:100%;height:auto;aspect-ratio:1000/700}
 .wall .wq{font-family:var(--display);font-size:21px;line-height:1.08;padding:14px 12px}
+.ricon{fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;vertical-align:-3px;flex:none}
+.rules-played{display:flex;flex-wrap:wrap;gap:4px 10px;margin-top:6px;color:var(--ink)}
+.rules-played span{display:inline-flex;align-items:center;gap:4px}
+.rule .rt .ricon{vertical-align:-2px;margin-right:6px}
 .wall .tg{font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--grey);padding:8px 12px 10px;border-top:1px dashed var(--line)}
 .wall .wq+.tg{border-top:0}
 .wall canvas.sq{aspect-ratio:1}
@@ -292,6 +296,19 @@ const RULES_W=[
  {id:"noe",noE:1,en:["No letter E","Every e you type disappears."],nl:["Geen letter E","Elke e die je typt verdwijnt."]},
  {id:"same",same:1,en:["One letter","Every word starts with the same letter."],nl:["Eén letter","Elk woord begint met dezelfde letter."]}
 ];
+// one small icon per rule, so a played rule is recognisable on the wall
+const RULE_ICON = {
+  blind:'<path d="M2 10s3-5 8-5 8 5 8 5-3 5-8 5-8-5-8-5z"/><circle cx="10" cy="10" r="2.4"/><path d="M3 17L17 3"/>',
+  one:'<path d="M2 13c2-6 4-6 5-2s3 4 4 0 3-6 4-2 2 4 3 3"/>',
+  seven:'<path d="M5 4h10l-6 13"/><path d="M7 11h6"/>',
+  fast:'<circle cx="10" cy="11" r="6.5"/><path d="M10 11V7.5M8 2.5h4M15 5l1.5-1.5"/>',
+  hand:'<path d="M6 17c-2-2-3-4-3-6l1.5-1 2 2V4.5a1.2 1.2 0 0 1 2.4 0V9m0-5.5a1.2 1.2 0 0 1 2.4 0V9m0-4.5a1.2 1.2 0 0 1 2.4 0V10c0 4-1.5 7-4 7z"/>',
+  four:'<path d="M12.5 17V3L4 13h11"/>',
+  wfast:'<circle cx="10" cy="11" r="6.5"/><path d="M10 11l3-2M8 2.5h4"/>',
+  noe:'<path d="M6 10.5h8a4 4 0 1 0-1.3 3.4"/><path d="M3 17L17 3"/>',
+  same:'<path d="M2 16l3.5-11L9 16M3.3 12.5h4.4M11 16l3.5-11L18 16M12.3 12.5h4.4"/>'
+};
+const ruleIcon = (id, size=16) => RULE_ICON[id] ? `<svg class="ricon" viewBox="0 0 20 20" width="${size}" height="${size}" aria-hidden="true">${RULE_ICON[id]}</svg>` : "";
 const ruleById = id => [...RULES_D,...RULES_W].find(r=>r.id===id);
 const ruleT = r => r[LANG]||r.en;
 function dealRule(g, not){
@@ -647,6 +664,9 @@ function paintAI(c, g, t=1){ const r=c.getBoundingClientRect(), d=Math.min(windo
 const mine = { all(){ try{ return JSON.parse(store.get("ec-mine")||"[]"); }catch(e){ return []; } },
   add(g){ const a=mine.all().filter(x=>x.id!==g.id); a.unshift({id:g.id,edition:g.edition,parts:g.parts,at:Date.now()}); store.set("ec-mine",JSON.stringify(a.slice(0,8))); } };
 let WALL=[];
+// the rules a game was played with, as icon + name, in part order
+function playedRules(g){ const rs=g.turns.map(t=>ruleById(t.rule)).filter(Boolean); if(!rs.length) return "";
+  return `<div class="rules-played" aria-label="${T("Rules played","Gespeelde regels")}">${rs.map(r=>`<span title="${esc(ruleT(r)[1])}">${ruleIcon(r.id,14)}${esc(ruleT(r)[0])}</span>`).join("")}</div>`; }
 function wallHtml(){
   return `<div class="stack" id="wall-top"><span class="lab">${T("The wall","De muur")}</span><h2>${T("Made with this app","Gemaakt met deze app")}</h2>
   <p class="muted" style="font-size:13px">${T("Finished pieces that players chose to publish. Tap one to unfold it.","Afgewerkte stukken die spelers publiceerden. Tik erop om ze open te vouwen.")}</p></div>
@@ -663,7 +683,7 @@ async function loadWall(){
     <div class="tg">${T("AI drawing · words by","AI-tekening · woorden van")} ${esc(e.turns.map(t=>t.name).filter(Boolean).join(" · ")||T("players","spelers"))}</div></button>`
     :`<button onclick="openWall(${i})" aria-label="${T("Open piece","Open stuk")} ${i+1}">
     ${e.edition==="draw"? e.turns.map((t,j)=>`<canvas data-ex="${i}" data-p="${j}"></canvas>`).join("") : `<div class="wq">${e.turns.map(t=>esc(t.text)).join(" ")}</div>`}
-    <div class="tg">${esc(e.turns.map(t=>t.name).filter(Boolean).join(" · ")||(e.edition==="draw"?T("Drawing","Tekenen"):T("Words","Woorden")))}</div></button>`).join("");
+    <div class="tg">${esc(e.turns.map(t=>t.name).filter(Boolean).join(" · ")||edName(e))}${playedRules(e)}</div></button>`).join("");
   w.querySelectorAll("canvas[data-ai]").forEach(c=>paintAI(c, WALL[+c.dataset.ai]));
   w.querySelectorAll("canvas[data-ex]").forEach(c=>{ sizeCanvas(c); paintPart(c.getContext("2d"), WALL[+c.dataset.ex], +c.dataset.p); });
 }
@@ -778,7 +798,7 @@ function home(){
       <div class="end">${T("One player per line. You only see the last word before yours. Then read the whole sentence out loud.","Eén speler per regel. Je ziet alleen het laatste woord voor het jouwe. Lees daarna de hele zin hardop voor.")}</div>
     </div>`}
     <span class="lab" style="margin-top:6px">${T("New · every part deals you a surprise rule","Nieuw · elk deel geeft je een verrassingsregel")}</span>
-    <div class="teaser">${(S.edition==="draw"?RULES_D:RULES_W).map(r=>`<span>${ruleT(r)[0]}</span>`).join("")}</div>
+    <div class="teaser">${(S.edition==="draw"?RULES_D:RULES_W).map(r=>`<span>${ruleIcon(r.id,15)} ${ruleT(r)[0]}</span>`).join("")}</div>
   </div>`}
 
   <div class="stack">
@@ -878,7 +898,7 @@ function ruleCard(){
   const [title,desc]=ruleT(r);
   return `<div class="rule" id="rule" aria-live="polite"><span class="lab">${T("Your rule","Jouw regel")}</span>
     <div class="ctr" id="ctr"></div>
-    <span class="rt">${title}</span><span class="rd">${desc}</span>
+    <span class="rt">${ruleIcon(r.id,26)}${title}</span><span class="rd">${desc}</span>
     ${d.swapped||d.t0||d.strokes.length||d.text?"":`<button class="ghost ruleswap" id="swap" onclick="swapRule()">${T("Deal me another rule ↻","Geef me een andere regel ↻")}</button>`}
     ${r.secs?`<div class="timebar"><i id="tbar" style="width:100%"></i></div>`:""}</div>`;
 }
@@ -1046,7 +1066,7 @@ function reveal(){
   return `${ex?`<button class="ghost chip" style="align-self:flex-start;padding-left:0" onclick="go('home');setTimeout(()=>$('#wall-top')?.scrollIntoView(),400)">← ${T("Back to the wall","Terug naar de muur")}</button>`:""}
   <div class="stack" style="gap:4px"><span class="lab">${ex?T("From the wall","Van de muur"):T("Unfolded","Opengevouwen")}</span><h2>${T("The reveal","De onthulling")}</h2></div>
   <div class="reveal" id="rv">${body}</div>
-  <div class="credits">${who.map((w,i)=>`<span>${esc(partNames(g)[i])} · ${esc(w)}${g.turns[i].rule&&ruleById(g.turns[i].rule)?" · "+esc(ruleT(ruleById(g.turns[i].rule))[0]):""}</span>`).join("")}</div>
+  <div class="credits">${who.map((w,i)=>`<span>${esc(partNames(g)[i])} · ${esc(w)}${g.turns[i].rule&&ruleById(g.turns[i].rule)?` · ${ruleIcon(g.turns[i].rule,13)} `+esc(ruleT(ruleById(g.turns[i].rule))[0]):""}</span>`).join("")}</div>
   ${g.edition==="words"?aiBlock(g, ex):""}
   <div class="stack">
     ${hasDB()&&!ex?`<button class="solid wide" ${g.onWall?"disabled":""} onclick="publishToWall(this)">${g.onWall?T("On the wall","Op de muur"):T("Publish to wall","Op de muur zetten")}</button>`:""}
