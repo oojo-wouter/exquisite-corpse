@@ -1,4 +1,4 @@
-# Exquisite corpse
+# Glitch
 
 A proof of concept of the cadavre exquis game. Each player draws or writes one part without seeing the rest, folds it, and passes it on with a link. The whole figure or sentence is revealed at the end.
 
