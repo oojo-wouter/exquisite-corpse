@@ -95,6 +95,18 @@ button.back{padding-left:0}
 .mbtns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px}
 .mbtns button{border-radius:0;min-height:52px;font-weight:700;letter-spacing:1px}
 @media (prefers-reduced-motion: reduce){.magicbg,.magic,.wand,.spark i,.mrules div{animation:none}.spark{display:none}}
+/* admin lock: same pop-up, asks a password; a wrong one glows the screen red */
+.lockico{width:44px;height:44px;fill:none;stroke:var(--ink);stroke-width:1.6;animation:twirl 1.1s cubic-bezier(.2,.8,.2,1) both}
+.magic input[type=password]{font:inherit;font-size:20px;width:100%;box-sizing:border-box;background:transparent;border:0;border-bottom:1.5px solid var(--ink);padding:10px 0;color:var(--ink);border-radius:0;outline:none}
+.magic input[type=password][aria-invalid="true"]{border-bottom-color:#e0002a}
+.lockerr{min-height:18px;margin:-4px 0 0;font-size:13px;font-weight:700;color:#e0002a}
+:root[data-theme="dark"] .lockerr{color:#ff8a9a}
+:root[data-theme="dark"] .magic input[type=password][aria-invalid="true"]{border-bottom-color:#ff8a9a}
+.redglow{position:fixed;inset:0;z-index:31;pointer-events:none;box-shadow:inset 0 0 90px 30px rgba(230,0,40,.75);animation:redglow .9s ease-out forwards}
+@keyframes redglow{0%{opacity:0}15%{opacity:1}100%{opacity:0}}
+.magic.shake{animation:shake .4s cubic-bezier(.36,.07,.19,.97) both}
+@keyframes shake{20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
+@media (prefers-reduced-motion: reduce){.lockico,.magic.shake{animation:none}.redglow{animation-duration:1.4s}}
 button.play.second{min-height:52px;font-size:15px;letter-spacing:1.5px;margin-top:-8px;background:transparent;color:var(--ink)}
 .toolpick{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .tool{border-radius:0;border:1.5px solid var(--line);background:var(--card);display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding:14px;text-transform:none;letter-spacing:0;text-align:left;line-height:1.3;min-height:0}
@@ -959,7 +971,7 @@ async function shareLink(text, btn){
 }
 
 // ---------- screens ----------
-function go(screen){ clearInterval(carTick); if(screen!=="waiting") stopPoll(); clearInterval(ruleTick); if(screen!=="reveal" && S.screen==="reveal") document.title="Glitch"; S.screen=screen; render(); scrollTo(0,0); if(S.game) persist(); }
+function go(screen){ if(screen==="admin" && !adminOk()) return askLock(()=>go("admin")); clearInterval(carTick); if(screen!=="waiting") stopPoll(); clearInterval(ruleTick); if(screen!=="reveal" && S.screen==="reveal") document.title="Glitch"; S.screen=screen; render(); scrollTo(0,0); if(S.game) persist(); }
 
 function render(){
   const app=$("#app");
@@ -1038,7 +1050,7 @@ const isIOS=()=>/iphone|ipad|ipod/i.test(navigator.userAgent)||(/Macintosh/.test
 const isPhone=()=>matchMedia("(pointer: coarse)").matches;
 function maybeInstall(){
   // for now: on every visit until closed (X or a button); closing hides it for this visit only
-  if(isStandalone()||installClosed||$("#install")||$("#magic")) return;
+  if(isStandalone()||installClosed||$("#install")||$("#magic")||$("#lock")) return;
   if(S.screen!=="intro") return;
   openInstall();
 }
@@ -1075,6 +1087,43 @@ function laterInstall(){ installClosed=true; closeInstall(); }
 async function doInstall(){ const e=installEvt; if(!e) return laterInstall(); installEvt=null;
   try{ e.prompt(); const r=await e.userChoice; if(r?.outcome==="accepted") store.set("ec-installed","1"); }catch(_){} installClosed=true; closeInstall(); }
 addEventListener("keydown",e=>{ if(e.key==="Escape" && $("#install")) laterInstall(); });
+
+// ---------- admin lock: a password pop-up before the admin page opens ----------
+// The check runs in the browser, so this keeps casual visitors out; it is not real security.
+const ADMIN_HASH="224440e2a68d6e61d4568eaef902ad3a2fc2cfff77674c831f7a7f4d027ed7d8"; // sha-256 of "glitch-admin:" + password
+const adminOk=()=>{ try{ return sessionStorage.getItem("ec-admin")===ADMIN_HASH; }catch(e){ return false; } };
+async function sha256(t){ const b=await crypto.subtle.digest("SHA-256", new TextEncoder().encode(t)); return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join(""); }
+const LOCK_ICON='<svg class="lockico" viewBox="0 0 48 48" aria-hidden="true"><rect x="10" y="21" width="28" height="21" rx="3"/><path d="M16.5 21v-6a7.5 7.5 0 0 1 15 0v6"/><circle cx="24" cy="31" r="2.2"/><path d="M24 33v4"/></svg>';
+let lockNext=null, lockReturn=null;
+function askLock(next){
+  if($("#lock")) return; lockNext=next; lockReturn=document.activeElement;
+  const bg=document.createElement("div"); bg.className="magicbg"; bg.id="lock";
+  bg.innerHTML=`<form class="magic" role="dialog" aria-modal="true" aria-labelledby="lock-h" onsubmit="tryLock(event)">
+    <button type="button" class="mclose" onclick="closeLock()" aria-label="${T("Close","Sluiten")}">${X_ICON}</button>
+    <div class="spark" aria-hidden="true">${Array.from({length:14},(_,i)=>`<i style="--a:${i*360/14}deg;--d:${(i%3)*60}ms"></i>`).join("")}</div>
+    ${LOCK_ICON}
+    <span class="lab">Admin</span>
+    <h2 id="lock-h">${T("Enter the password","Geef het wachtwoord in")}</h2>
+    <label class="muted" for="lock-pw" style="font-size:14px;line-height:1.45">${T("This page is only for the makers of Glitch.","Deze pagina is enkel voor de makers van Glitch.")}</label>
+    <input type="password" id="lock-pw" autocomplete="current-password" autocapitalize="off" spellcheck="false" aria-describedby="lock-err" oninput="lockClear()">
+    <p class="lockerr" id="lock-err" role="alert"></p>
+    <div class="mbtns"><button type="button" class="wide" onclick="closeLock()">${T("Cancel","Annuleer")}</button><button type="submit" class="solid wide">${T("Open","Open")}</button></div>
+  </form>`;
+  bg.addEventListener("click",e=>{ if(e.target===bg) closeLock(); });
+  document.body.appendChild(bg); document.body.style.overflow="hidden"; setTimeout(()=>$("#lock-pw")?.focus(),50);
+}
+function closeLock(){ if(!$("#lock")) return; $("#lock").remove(); document.body.style.overflow=""; lockNext=null; lockReturn?.focus?.(); }
+function lockClear(){ const i=$("#lock-pw"); i.removeAttribute("aria-invalid"); $("#lock-err").textContent=""; }
+async function tryLock(e){
+  e.preventDefault(); const i=$("#lock-pw"), pw=i.value;
+  let h=""; try{ h=await sha256("glitch-admin:"+pw); }catch(_){}
+  if(h===ADMIN_HASH){ try{ sessionStorage.setItem("ec-admin",h); }catch(_){} const next=lockNext; lockNext=null; $("#lock").remove(); document.body.style.overflow=""; next?.(); return; }
+  i.setAttribute("aria-invalid","true"); $("#lock-err").textContent=T("Wrong password. Try again.","Foutief wachtwoord. Probeer opnieuw.");
+  i.select();
+  const f=$("#lock .magic"); f.classList.remove("shake"); void f.offsetWidth; f.classList.add("shake");
+  document.querySelector(".redglow")?.remove(); const r=document.createElement("div"); r.className="redglow"; document.body.appendChild(r); setTimeout(()=>r.remove(),1500);
+}
+addEventListener("keydown",e=>{ if(e.key==="Escape" && $("#lock")) closeLock(); });
 
 // ---------- admin: the wall and the numbers ----------
 function openAdmin(){ if(S.screen==="admin") return go(S.back||"intro"); S.back=["loading","missing","noaccess"].includes(S.screen)?"intro":S.screen; go("admin"); }
