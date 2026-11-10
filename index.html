@@ -527,7 +527,7 @@ const THEMES = {
 // ---------- language: English or Dutch, remembered per phone ----------
 let LANG=(()=>{ try{ const l=localStorage.getItem("ec-lang"); if(l==="nl"||l==="en") return l; }catch(e){} return /^nl\b/i.test(navigator.language||"")?"nl":"en"; })();
 const T=(en,nl)=>LANG==="nl"?nl:en;
-const DRAW_PARTS_L = {en:{3:["Head","Body","Legs"],4:["Head","Body","Belly","Legs"]}, nl:{3:["Hoofd","Lijf","Benen"],4:["Hoofd","Lijf","Buik","Benen"]}};
+const DRAW_PARTS_L = {en:{3:["Head","Upper body","Legs"],4:["Head","Upper body","Hips","Legs"]}, nl:{3:["Hoofd","Bovenlijf","Benen"],4:["Hoofd","Bovenlijf","Heup","Benen"]}};
 const WORD_PARTS_L = {en:{3:["Who","Does what","Where"],4:["Who","Does what","To whom","Where"]}, nl:{3:["Wie","Doet wat","Waar"],4:["Wie","Doet wat","Met wie","Waar"]}};
 // help line and example per part; Words uses 3 parts, 4 keeps older links working
 const WORD_HELP_L = {en:{
@@ -1282,14 +1282,14 @@ function home(){
       <div class="end">${T("One player per line. You only see the last word before yours. Then read the whole sentence out loud.","Eén speler per regel. Je ziet alleen het laatste woord voor het jouwe. Lees daarna de hele zin hardop voor.")}</div>
     </div>` : blocks ? `${rulesOpen()}<div class="steps big">
       <div><b>1</b><span>${T("<strong>Build a head</strong>Tap or drag over the grid to paint small blocks, starting at the squares. Tap a block again to turn it. Run a few blocks into the bottom row.","<strong>Bouw een hoofd</strong>Tik of sleep over het rooster om kleine blokjes te zetten, begin bij de vierkantjes. Tik nog eens om een blokje te draaien. Laat een paar blokken doorlopen tot in de onderste rij.")}</span></div>
-      <div><b>2</b><span>${T("<strong>Build a body</strong>You only see a faint copy of the bottom row above. Build on from there.","<strong>Bouw een lijf</strong>Je ziet alleen een vage kopie van de onderste rij erboven. Bouw daar verder.")}</span></div>
-      <div><b>3</b><span>${T("<strong>Build a belly</strong>Same again.","<strong>Bouw een buik</strong>Net hetzelfde.")}</span></div>
+      <div><b>2</b><span>${T("<strong>Build an upper body</strong>You only see a faint copy of the bottom row above. Build on from there.","<strong>Bouw een bovenlijf</strong>Je ziet alleen een vage kopie van de onderste rij erboven. Bouw daar verder.")}</span></div>
+      <div><b>3</b><span>${T("<strong>Build the hips</strong>Same again.","<strong>Bouw een heup</strong>Net hetzelfde.")}</span></div>
       <div><b>4</b><span>${T("<strong>Build legs</strong>The last fold. Give it something to stand on.","<strong>Bouw benen</strong>De laatste vouw. Geef het iets om op te staan.")}</span></div>
       <div class="end">${T("Then unfold it and watch the creature build itself, block by block.","Vouw dan open en kijk hoe het wezen zichzelf bouwt, blok per blok.")} <button class="exlink" onclick="openExamples()">${T("Examples","Voorbeelden")}</button></div>
     </div></details>` : `${rulesOpen()}<div class="steps big">
       <div><b>1</b><span>${T("<strong>Draw a head</strong>Start from the dots. Let a few lines run down past the dashed line.","<strong>Teken een hoofd</strong>Begin bij de stippen. Laat een paar lijnen doorlopen tot over de stippellijn.")}</span></div>
-      <div><b>2</b><span>${T("<strong>Draw a body</strong>You only see dots where the lines above ended. Start from those.","<strong>Teken een lijf</strong>Je ziet alleen stippen waar de lijnen erboven stopten. Begin daar.")}</span></div>
-      <div><b>3</b><span>${T("<strong>Draw a belly</strong>Same again.","<strong>Teken een buik</strong>Net hetzelfde.")}</span></div>
+      <div><b>2</b><span>${T("<strong>Draw an upper body</strong>You only see dots where the lines above ended. Start from those.","<strong>Teken een bovenlijf</strong>Je ziet alleen stippen waar de lijnen erboven stopten. Begin daar.")}</span></div>
+      <div><b>3</b><span>${T("<strong>Draw the hips</strong>Same again.","<strong>Teken een heup</strong>Net hetzelfde.")}</span></div>
       <div><b>4</b><span>${T("<strong>Draw legs</strong>The last fold. Give it something to stand on.","<strong>Teken benen</strong>De laatste vouw. Geef het iets om op te staan.")}</span></div>
       <div class="end">${T("Then unfold it and see the whole creature for the first time.","Vouw dan open en zie het hele wezen voor het eerst.")} <button class="exlink" onclick="openExamples()">${T("Examples","Voorbeelden")}</button></div>
     </div></details>`}
