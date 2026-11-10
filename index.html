@@ -26,6 +26,47 @@
   width:40px;height:40px;min-height:40px;padding:0;border-radius:50%;border:1.5px solid var(--ink);background:var(--paper);display:grid;place-items:center}
 .mode.lang{right:calc(max(12px, env(safe-area-inset-right, 0px)) + 48px);font-family:var(--mono);font-size:12px;font-weight:500;letter-spacing:.5px;color:var(--ink)}
 .mode i{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--ink);background:linear-gradient(90deg,var(--ink) 50%,transparent 50%)}
+.mode.adm{right:calc(max(12px, env(safe-area-inset-right, 0px)) + 96px);color:var(--ink)}
+.mode.adm svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.mode.adm[aria-current="page"]{background:var(--ink);color:var(--paper)}
+/* screen 1: title, swipeable mood images, play */
+.intro{min-height:calc(100svh - 98px);display:flex;flex-direction:column;gap:18px}
+.intro h1{font-weight:700;letter-spacing:-.04em;text-transform:uppercase}
+.base{font-family:var(--display);font-weight:300;font-size:23px;line-height:30px;letter-spacing:-.575px;margin-top:4px}
+.car{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;border:1.5px solid var(--ink);background:#0047ab}
+.car::-webkit-scrollbar{display:none}
+.car figure{flex:0 0 100%;margin:0;scroll-snap-align:center;scroll-snap-stop:always}
+.car img{display:block;width:100%;height:clamp(260px, calc(100svh - 360px), 640px);object-fit:cover;object-position:50% 62%;user-select:none;-webkit-user-drag:none}
+.dots{display:flex;justify-content:center;gap:2px;margin-top:-8px}
+.dots button{min-height:32px;width:32px;padding:0;border:0;display:grid;place-items:center}
+.dots button i{width:8px;height:8px;border-radius:50%;border:1.5px solid var(--ink);box-sizing:border-box}
+.dots button[aria-current="true"] i{background:var(--ink)}
+button.play{border-radius:0;width:100%;min-height:64px;display:flex;justify-content:space-between;align-items:center;padding:0 22px;font-size:20px;font-weight:700;letter-spacing:2px;margin-top:auto}
+button.play svg{width:28px;height:20px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:square}
+/* quit as a bold X */
+button.quit{width:44px;min-width:44px;padding:0;display:grid;place-items:center;border-color:transparent}
+button.quit svg{width:20px;height:20px;stroke:currentColor;stroke-width:3.2;stroke-linecap:square;fill:none}
+button.quit.warn{width:auto;padding:0 14px;font-size:13px}
+button.back{padding-left:0}
+/* admin */
+.kpis{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line)}
+.kpi{background:var(--card);padding:14px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.kpi b{font-family:var(--display);font-weight:300;font-size:40px;line-height:1;letter-spacing:-1px;font-variant-numeric:tabular-nums}
+.kpi small{font-size:12px;line-height:1.3;color:var(--grey)}
+.insights{display:flex;flex-direction:column;border-top:1.5px solid var(--ink)}
+.insights p{padding:10px 0;border-bottom:1px dashed var(--line);font-size:14px;line-height:1.4}
+.hbars{display:flex;flex-direction:column;gap:10px}
+.hbar{display:grid;grid-template-columns:1fr auto;gap:4px 10px;font-size:14px}
+.hbar .tr{grid-column:1/-1;height:10px;background:var(--wash)}
+.hbar .tr i{display:block;height:100%;background:var(--ink);border-radius:0 4px 4px 0;min-width:2px}
+.hbar span:nth-child(2){font-variant-numeric:tabular-nums}
+.days{display:grid;grid-template-columns:repeat(14,1fr);gap:2px;align-items:end;height:120px;border-bottom:1px solid var(--line)}
+.days div{height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:stretch;cursor:default}
+.days i{display:block;background:var(--ink);border-radius:4px 4px 0 0;min-height:0}
+.days div:hover i,.days div:focus-visible i{opacity:.7}
+.daylab{display:flex;justify-content:space-between;font-size:11px;color:var(--grey);letter-spacing:.5px;text-transform:uppercase}
+.toplist div{display:flex;justify-content:space-between;border-top:1px solid var(--line);padding:6px 0;font-size:14px}
+.toplist span:last-child{font-variant-numeric:tabular-nums}
 html,body{height:100%}
 body{background:var(--paper);color:var(--ink);font-family:var(--ui);font-size:15px;line-height:25px;font-weight:400;
   padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));
@@ -125,16 +166,7 @@ textarea{font-family:var(--display);font-size:30px;line-height:33.75px;font-weig
 .aihead{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:12px;letter-spacing:.5px;text-transform:uppercase;color:var(--grey)}
 #aican{display:block;width:100%;aspect-ratio:1;background:var(--card);border:1px solid var(--line)}
 .aicap{font-size:12px;margin:0}
-.sheetbg{position:fixed;inset:0;background:rgba(0,30,80,.5);z-index:30;display:flex;align-items:flex-end;justify-content:center}
-.cheat{background:var(--paper);width:100%;max-width:560px;max-height:86vh;overflow:auto;border-top:1.5px solid var(--ink);box-sizing:border-box;
-  padding:20px max(16px, env(safe-area-inset-right, 0px)) calc(24px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));display:flex;flex-direction:column;gap:16px;animation:up .25s ease-out}
 @keyframes up{from{transform:translateY(30px);opacity:0}}
-.art{display:grid;grid-template-columns:84px 1fr;gap:12px;border-top:1px solid var(--line);padding-top:14px}
-.art .yr{font-family:var(--display);font-size:23px;line-height:1.1;font-weight:300;letter-spacing:-.575px;font-variant-numeric:tabular-nums;white-space:nowrap}
-.art .ti{font-family:var(--display);font-size:23px;line-height:1.1;font-weight:300;letter-spacing:-.575px}
-.art .by{font-size:14px}
-.art .md{font-size:13px;color:var(--grey)}
-.art a{color:var(--ink);font-weight:500;font-size:14px;text-underline-offset:3px}
 .steps{display:flex;flex-direction:column;background:var(--card);border:1px solid var(--line)}
 .steps div{display:grid;grid-template-columns:34px 1fr;gap:10px;align-items:baseline;padding:10px 14px;font-size:14px;line-height:1.35}
 .steps div+div{border-top:1.5px dashed var(--line)}
@@ -217,6 +249,7 @@ button.warn{background:var(--ink);color:var(--paper)}
 
 </head><body>
 <button class="mode lang" id="lang" onclick="setLang(LANG==='nl'?'en':'nl')" aria-label="Schakel naar Nederlands">NL</button>
+<button class="mode adm" id="adm" onclick="openAdmin()" aria-label="Admin"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="4" y="9" width="12" height="8.5" rx="1.5"/><path d="M6.8 9V6.4a3.2 3.2 0 0 1 6.4 0V9"/></svg></button>
 <button class="mode" id="mode" onclick="toggleTheme()" aria-label="Switch to dark mode"><i></i></button>
 <div class="wrap" id="app"></div>
 <div class="toast" id="toast" hidden></div>
@@ -365,17 +398,19 @@ const store = { get(k){ try{return localStorage.getItem(k)||"";}catch(e){return 
 
 // two-tap confirm for anything destructive (the viewer has no confirm dialogs)
 const armed={};
-function confirmBtn(key,label,ask,cls,action){
-  return `<button class="${cls}" id="cb-${key}" onclick="armTap('${key}','${label}','${ask}',()=>{${action}})">${label}</button>`;
+const ARM_LABEL={};
+function confirmBtn(key,label,ask,cls,action,aria){
+  ARM_LABEL[key]=label;
+  return `<button class="${cls}" id="cb-${key}" ${aria?`aria-label="${aria}"`:""} onclick="armTap('${key}','${ask}',()=>{${action}})">${label}</button>`;
 }
-function armTap(key,label,ask,fn){
-  const b=$("#cb-"+key);
-  if(armed[key]){ clearTimeout(armed[key]); armed[key]=0; b.textContent=label; b.classList.remove("warn"); fn(); return; }
+function armTap(key,ask,fn){
+  const b=$("#cb-"+key), label=ARM_LABEL[key];
+  if(armed[key]){ clearTimeout(armed[key]); armed[key]=0; b.innerHTML=label; b.classList.remove("warn"); fn(); return; }
   b.textContent=ask; b.classList.add("warn");
-  armed[key]=setTimeout(()=>{ armed[key]=0; if(b.isConnected){ b.textContent=label; b.classList.remove("warn"); } },3000);
+  armed[key]=setTimeout(()=>{ armed[key]=0; if(b.isConnected){ b.innerHTML=label; b.classList.remove("warn"); } },3000);
 }
 // ---------- state ----------
-let S = { screen:"home", edition:"draw", theme:"Dream zoo", parts:3, mode:"local", game:null,
+let S = { screen:"intro", atab:"wall", back:"intro", edition:"draw", theme:"Dream zoo", parts:3, mode:"local", game:null,
   tab: (()=>{ const q=new URLSearchParams(location.search).get("tab"); if(q==="blocks"||q==="rules") return q; return store.get("ec-tab")==="blocks"?"blocks":"rules"; })() };
 function setTab(t){ S.tab=t; store.set("ec-tab",t); const q=new URLSearchParams(location.search); q.set("tab",t); history.replaceState(null,"",location.pathname+"?"+q+location.hash); render(); }
 function tabsHtml(){
@@ -563,33 +598,6 @@ function setBlk(s){ if(s==="x"){ BLK.x=!BLK.x; BLK.eye=false; } else if(s==="eye
 function turnBlk(){ BLK.eye=false; BLK.r=(BLK.r+1)%4; if(BLK.s==="s"||BLK.s==="c"){ BLK.x=false; BLK.s="t"; setBlk("t"); } blkIcons(); }
 function blkIcons(){ document.querySelectorAll("[data-blk]").forEach(b=>{ const s=b.dataset.blk; if(s==="t"||s==="q") b.innerHTML=shapeSvg(s,BLK.r); }); }
 
-// ---------- cheat sheet: famous exquisite corpses (images stay on the museums' sites) ----------
-const MASTERS = [
- {yr:"1926–27", ti:"Nude", by:"Man Ray, Joan Miró, Yves Tanguy, Max Morise", md:"Ink, pencil and coloured pencil on paper", at:"MoMA, New York", url:"https://www.moma.org/collection/works/35701"},
- {yr:"1927", ti:"Cadavre exquis", by:"Yves Tanguy, Man Ray, Max Morise, André Breton", md:"Ink, graphite and coloured pencil on paper", at:"Centre Pompidou, Paris", url:"https://www.centrepompidou.fr/en/ressources/oeuvre/cEpRp7"},
- {yr:"1928", ti:"Exquisite corpse", by:"Man Ray, Max Morise, André Breton, Yves Tanguy", md:"Colour crayon, crayon and ink", at:"NGV, Melbourne", url:"https://ngv.vic.gov.au/explore/collection/work/107841"},
- {yr:"1932", ti:"Cadavre exquis", by:"André Breton, Valentine Hugo, Paul Éluard", md:"Coloured pencil on black paper", at:"The Met, New York", url:"https://www.metmuseum.org/art/collection/search/483866"},
- {yr:"1935", ti:"Cadavre exquis", by:"Óscar Domínguez, Remedios Varo, Esteban Francés", md:"Paper and photo collage", at:"SFMOMA, San Francisco", url:"https://www.sfmoma.org/artwork/96.649"},
- {yr:"2000", ti:"Exquisite Corpse", by:"Jake and Dinos Chapman", md:"Etchings, a modern series", at:"Tate, London", url:"https://www.tate.org.uk/art/art-terms/cadavre-exquis-exquisite-corpse"}
-];
-let cheatReturn=null;
-function openCheat(){
-  cheatReturn=document.activeElement;
-  const bg=document.createElement("div"); bg.className="sheetbg"; bg.id="cheat";
-  bg.innerHTML=`<div class="cheat" role="dialog" aria-modal="true" aria-labelledby="cheat-h">
-    <div class="topbar"><span class="lab">${T("Cheat","Spiekbrief")}</span><button class="ghost chip" id="cheat-x" onclick="closeCheat()">${T("Close","Sluiten")}</button></div>
-    <h2 id="cheat-h">${T("Look at the masters","Kijk naar de meesters")}</h2>
-    <p class="muted" style="font-size:14px">${T("The best-known exquisite corpses, made by the surrealists who invented the game. The images belong to the museums, so each one opens on the museum\'s site.","De bekendste cadavres exquis, gemaakt door de surrealisten die het spel bedachten. De beelden zijn van de musea, dus elk werk opent op de site van het museum.")}</p>
-    ${MASTERS.map(m=>`<div class="art"><div class="yr">${m.yr}</div><div class="stack" style="gap:4px">
-      <span class="ti">${esc(m.ti)}</span><span class="by">${esc(m.by)}</span><span class="md">${esc(m.md)}</span>
-      <a href="${m.url}" target="_blank" rel="noopener">${T("See it at","Bekijk bij")} ${esc(m.at)} ↗</a></div></div>`).join("")}
-    <a href="https://www.moma.org/collection/terms/exquisite-corpse" target="_blank" rel="noopener" style="color:var(--ink);font-size:14px;text-underline-offset:3px">${T("More at MoMA: exquisite corpse ↗","Meer bij MoMA: exquisite corpse ↗")}</a>
-  </div>`;
-  bg.addEventListener("click",e=>{ if(e.target===bg) closeCheat(); });
-  document.body.appendChild(bg); document.body.style.overflow="hidden"; $("#cheat-x").focus();
-}
-function closeCheat(){ $("#cheat")?.remove(); document.body.style.overflow=""; cheatReturn?.focus?.(); }
-addEventListener("keydown",e=>{ if(e.key==="Escape" && $("#cheat")) closeCheat(); });
 
 // ---------- shared database (Supabase). Left empty: links carry the whole game and the wall stays empty ----------
 const SB = { url:"https://cxmxqowmlbxchnnlhyrf.supabase.co", key:"sb_publishable_xweKj0h96mmGl-g6kCm3IQ_tXn8_Zyh" };
@@ -763,29 +771,131 @@ async function shareLink(text, btn){
 }
 
 // ---------- screens ----------
-function go(screen){ if(screen!=="waiting") stopPoll(); clearInterval(ruleTick); if(screen!=="reveal" && S.screen==="reveal") document.title="Glitch"; S.screen=screen; render(); scrollTo(0,0); if(S.game) persist(); }
+function go(screen){ clearInterval(carTick); if(screen!=="waiting") stopPoll(); clearInterval(ruleTick); if(screen!=="reveal" && S.screen==="reveal") document.title="Glitch"; S.screen=screen; render(); scrollTo(0,0); if(S.game) persist(); }
 
 function render(){
   const app=$("#app");
-  const f = ({home,turn,handoff,reveal,sent,waiting,join,loading:()=>`<p class="muted">${T("Unfolding the paper…","Het papier wordt opengevouwen…")}</p>`,
+  const f = ({intro,admin,home,turn,handoff,reveal,sent,waiting,join,loading:()=>`<p class="muted">${T("Unfolding the paper…","Het papier wordt opengevouwen…")}</p>`,
     missing:()=>`<h2>${T("This link doesn't open a game","Deze link opent geen spel")}</h2><p class="muted">${T("It may have been cut off when it was shared. Ask for the full link.","Misschien is hij afgeknipt bij het delen. Vraag de volledige link.")}</p><button class="solid" onclick="location.hash='';go('home')">${T("Start a new one","Begin een nieuw spel")}</button>`,
     noaccess:()=>`<h2>You've been asked to add a part</h2><p class="muted">Sign in to claude.ai to open shared games. Or start your own game on one phone.</p><button class="solid" onclick="location.hash='';go('home')">Start a game</button>`})[S.screen];
   app.innerHTML = f();
+  const adm=$("#adm"); if(adm){ S.screen==="admin" ? adm.setAttribute("aria-current","page") : adm.removeAttribute("aria-current"); }
   after[S.screen]?.();
 }
 const after = {};
-after.home=()=>{ loadWall(); yourGames(); };
+after.home=()=>{ yourGames(); };
+
+// ---------- screen 1: title, swipeable mood images, play ----------
+const X_ICON='<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 4l12 12M16 4L4 16"/></svg>';
+const MOODS=[["alien",["Alien, fish and bird","Alien, vis en vogel"]],["kat-robot",["Cat, robot and octopus","Kat, robot en octopus"]],["krokodil",["Crocodile, bird and frog","Krokodil, vogel en kikker"]],["monster",["One-eyed monster, jumper, fish and bird","Eenogig monster, trui, vis en vogel"]]];
+let carTick=0, carIdx=0;
+function intro(){
+  return `<div class="intro">
+    <div><h1>Glitch.</h1><p class="base">create the unexpected.</p></div>
+    <div class="car" id="car" role="region" aria-roledescription="carousel" aria-label="${T("Creatures made by folding paper","Wezens gemaakt door papier te vouwen")}" tabindex="0">
+      ${MOODS.map(([f,a],i)=>`<figure aria-roledescription="slide" aria-label="${i+1} / ${MOODS.length}"><img src="images/intro/${f}.webp" alt="${T(a[0],a[1])}" width="720" height="1279" ${i?'loading="lazy"':''} draggable="false"></figure>`).join("")}
+    </div>
+    <div class="dots" role="group" aria-label="${T("Images","Beelden")}">${MOODS.map((_,i)=>`<button aria-label="${T("Image","Beeld")} ${i+1}" onclick="carTo(${i})"><i></i></button>`).join("")}</div>
+    <button class="solid play" onclick="go('home')">Play<svg viewBox="0 0 28 20" aria-hidden="true"><path d="M1 10h24M17 2l8 8-8 8"/></svg></button>
+  </div>`;
+}
+function carTo(i, smooth=true){ const c=$("#car"); if(!c) return; carIdx=(i+MOODS.length)%MOODS.length; c.scrollTo({left:carIdx*c.clientWidth,behavior:smooth?"smooth":"auto"}); carDots(); }
+function carDots(){ document.querySelectorAll(".dots button").forEach((b,i)=>b.setAttribute("aria-current",i===carIdx)); }
+function carAuto(){ clearInterval(carTick); if(matchMedia("(prefers-reduced-motion: reduce)").matches) return; carTick=setInterval(()=>carTo(carIdx+1),4500); }
+after.intro=()=>{
+  const c=$("#car"); carTo(carIdx,false); carAuto();
+  let t; c.addEventListener("scroll",()=>{ clearTimeout(t); t=setTimeout(()=>{ carIdx=Math.round(c.scrollLeft/c.clientWidth); carDots(); },60); },{passive:true});
+  ["pointerdown","touchstart","focusin"].forEach(e=>c.addEventListener(e,()=>{ clearInterval(carTick); setTimeout(carAuto,8000); },{passive:true}));
+  c.addEventListener("keydown",e=>{ if(e.key==="ArrowRight") carTo(carIdx+1); if(e.key==="ArrowLeft") carTo(carIdx-1); });
+};
+
+// ---------- admin: the wall and the numbers ----------
+function openAdmin(){ if(S.screen==="admin") return go(S.back||"intro"); S.back=["loading","missing","noaccess"].includes(S.screen)?"intro":S.screen; go("admin"); }
+function admin(){
+  return `<div class="topbar"><button class="ghost chip back" onclick="go(S.back||'intro')">← ${T("Back","Terug")}</button><span class="lab">Admin</span></div>
+  <h2>Admin</h2>
+  <div class="tabs" role="tablist" aria-label="Admin">
+    <button role="tab" aria-selected="${S.atab==="wall"}" onclick="S.atab='wall';render()">${T("The wall","De muur")}</button>
+    <button role="tab" aria-selected="${S.atab==="stats"}" onclick="S.atab='stats';render()">${T("Stats","Statistieken")}</button></div>
+  ${S.atab==="stats" ? `<div class="stack" id="stats" style="gap:22px"><p class="muted">${T("Counting…","Aan het tellen…")}</p></div>` : wallHtml()}`;
+}
+after.admin=()=>{ S.atab==="stats" ? loadStats() : loadWall(); };
+async function apiAll(path){ const out=[]; for(let off=0; off<50000; off+=1000){ const a=await api(path+(path.includes("?")?"&":"?")+"limit=1000&offset="+off); out.push(...(a||[])); if(!a||a.length<1000) break; } return out; }
+const pct=(a,b)=>b?Math.round(a/b*100):0;
+const nf=n=>n.toLocaleString(LANG==="nl"?"nl-BE":"en-GB");
+function dur(ms){ const m=ms/60000; if(m<1) return T("under a minute","minder dan een minuut"); if(m<90) return Math.round(m)+" min"; const h=m/60; if(h<36) return Math.round(h)+T(" hours"," uur"); return Math.round(h/24)+T(" days"," dagen"); }
+const median=a=>{ if(!a.length) return null; const b=[...a].sort((x,y)=>x-y), k=b.length>>1; return b.length%2?b[k]:(b[k-1]+b[k])/2; };
+async function loadStats(){
+  const box=$("#stats"); if(!box) return;
+  if(!hasDB()){ box.innerHTML=`<p class="muted">${T("No database connected.","Geen databank verbonden.")}</p>`; return; }
+  let games, wall, ai=[], aiw=[];
+  try{
+    [games, wall]=await Promise.all([apiAll("games?select=id,edition,parts,start,created_at,turns(n,name,created_at)&order=created_at.desc"), apiAll("wall?select=game_id,created_at")]);
+    try{ [ai, aiw]=await Promise.all([apiAll("ai_drawings?select=game_id"), apiAll("ai_wall?select=game_id")]); }catch(_){}
+  }catch(e){ if(box.isConnected) box.innerHTML=`<p class="muted">${T("Could not load the numbers","De cijfers laden lukte niet")} (${esc(String(e.status||e.message||e))}).</p>`; return; }
+  if(!$("#stats")) return;
+  const now=Date.now(), DAY=864e5;
+  const G=games.map(g=>{ const tu=g.turns||[], st=g.start||""; return { ...g, tu, done:tu.length>=g.parts, kind:g.edition==="words"?"words":(st[0]==="G"||st[0]==="B")?"blocks":"pen", t:Date.parse(g.created_at) }; });
+  const started=G.length, finished=G.filter(g=>g.done), parts=G.reduce((a,g)=>a+g.tu.length,0);
+  const wallSet=new Set(wall.map(w=>w.game_id)), onWall=wallSet.size;
+  const wk=G.filter(g=>now-g.t<7*DAY).length, prevWk=G.filter(g=>now-g.t>=7*DAY&&now-g.t<14*DAY).length;
+  const names={}; let signed=0; G.forEach(g=>g.tu.forEach(t=>{ const n=(t.name||"").trim(); if(n){ signed++; const k=n.toLowerCase(); (names[k] ||= {n,c:0}).c++; } }));
+  const players=Object.keys(names).length, top=Object.values(names).sort((a,b)=>b.c-a.c).slice(0,5);
+  const times=finished.map(g=>Math.max(...g.tu.map(t=>Date.parse(t.created_at)))-g.t).filter(x=>x>=0);
+  const med=median(times);
+  const kinds=[["pen",T("Drawing · pen + rules","Tekenen · pen + regels")],["blocks",T("Drawing · blocks","Tekenen · blokken")],["words",T("Words","Woorden")]].map(([k,l])=>{ const a=G.filter(g=>g.kind===k); return {l,c:a.length,d:a.filter(g=>g.done).length}; });
+  const maxK=Math.max(1,...kinds.map(k=>k.c));
+  const reach=[1,2,3].map(k=>({k,c:G.filter(g=>g.tu.length>=k).length}));
+  // last 14 days, started games per day
+  const d0=new Date(); d0.setHours(0,0,0,0);
+  const days=Array.from({length:14},(_,i)=>{ const a=d0.getTime()-(13-i)*DAY; return {a,c:G.filter(g=>g.t>=a&&g.t<a+DAY).length}; });
+  const maxD=Math.max(1,...days.map(d=>d.c));
+  const fmtD=a=>new Date(a).toLocaleDateString(LANG==="nl"?"nl-BE":"en-GB",{day:"numeric",month:"short"});
+  // plain-language insights
+  const ins=[];
+  if(!started) ins.push(T("No games in the database yet. Games played over a link are counted from the first part.","Nog geen spellen in de databank. Spellen via een link tellen mee vanaf het eerste deel."));
+  else{
+    ins.push(T(`${pct(finished.length,started)}% of games get finished: ${nf(finished.length)} of ${nf(started)}.`,`${pct(finished.length,started)}% van de spellen wordt afgewerkt: ${nf(finished.length)} van ${nf(started)}.`));
+    const drop=[[1,2],[2,3]].map(([a,b])=>({a,lost:reach[a-1].c-reach[b-1].c})).sort((x,y)=>y.lost-x.lost)[0];
+    if(drop.lost>0) ins.push(T(`Most games stop after part ${drop.a}: ${nf(drop.lost)} never got part ${drop.a+1}.`,`De meeste spellen stoppen na deel ${drop.a}: ${nf(drop.lost)} kregen nooit deel ${drop.a+1}.`));
+    const fav=[...kinds].sort((a,b)=>b.c-a.c)[0]; if(fav.c) ins.push(T(`Most played: ${fav.l} (${pct(fav.c,started)}% of games).`,`Meest gespeeld: ${fav.l} (${pct(fav.c,started)}% van de spellen).`));
+    if(finished.length) ins.push(T(`${pct(onWall,finished.length)}% of finished pieces were published to the wall.`,`${pct(onWall,finished.length)}% van de afgewerkte stukken kwam op de muur.`));
+    ins.push(wk>=prevWk ? T(`${nf(wk)} new games this week, ${wk>prevWk?"up from":"same as"} ${nf(prevWk)} the week before.`,`${nf(wk)} nieuwe spellen deze week, ${wk>prevWk?"meer dan":"evenveel als"} de week ervoor (${nf(prevWk)}).`)
+      : T(`${nf(wk)} new games this week, down from ${nf(prevWk)} the week before.`,`${nf(wk)} nieuwe spellen deze week, minder dan de week ervoor (${nf(prevWk)}).`));
+    if(med!==null) ins.push(T(`A finished game takes ${dur(med)} from first to last part (median).`,`Een afgewerkt spel duurt ${dur(med)} van eerste tot laatste deel (mediaan).`));
+  }
+  const kpi=(v,l)=>`<div class="kpi"><b>${v}</b><small>${l}</small></div>`;
+  $("#stats").innerHTML=`
+  <div class="kpis">
+    ${kpi(nf(started),T("games started","spellen gestart"))}
+    ${kpi(pct(finished.length,started)+"%",T("finished","afgewerkt")+` · ${nf(finished.length)}`)}
+    ${kpi(nf(parts),T("parts played","delen gespeeld"))}
+    ${kpi(nf(players),T("players who signed","spelers die tekenden"))}
+    ${kpi(nf(onWall),T("on the wall","op de muur"))}
+    ${kpi(nf(wk),T("games this week","spellen deze week"))}
+  </div>
+  <div class="stack"><span class="lab">${T("Insights","Inzichten")}</span><div class="insights">${ins.map(x=>`<p>${x}</p>`).join("")}</div></div>
+  <div class="stack"><span class="lab">${T("Games started · last 14 days","Spellen gestart · laatste 14 dagen")}</span>
+    <div class="days" role="img" aria-label="${T("Games started per day","Spellen gestart per dag")}">${days.map(d=>`<div tabindex="0" title="${fmtD(d.a)}: ${d.c}"><i style="height:${d.c/maxD*100}%"></i></div>`).join("")}</div>
+    <div class="daylab"><span>${fmtD(days[0].a)}</span><span>${T("today","vandaag")}</span></div></div>
+  <div class="stack"><span class="lab">${T("What people play","Wat mensen spelen")}</span><div class="hbars">
+    ${kinds.map(k=>`<div class="hbar" title="${esc(k.l)}: ${k.c} ${T("started","gestart")}, ${k.d} ${T("finished","afgewerkt")}"><span>${esc(k.l)}</span><span>${nf(k.c)} · ${pct(k.d,k.c)}% ${T("finished","af")}</span><div class="tr"><i style="width:${k.c/maxK*100}%"></i></div></div>`).join("")}</div></div>
+  <div class="stack"><span class="lab">${T("How far games get","Hoe ver spellen geraken")}</span><div class="hbars">
+    ${reach.map(r=>`<div class="hbar"><span>${T("Reached part","Tot deel")} ${r.k}</span><span>${nf(r.c)} · ${pct(r.c,started)}%</span><div class="tr"><i style="width:${pct(r.c,started)}%"></i></div></div>`).join("")}</div></div>
+  <div class="stack"><span class="lab">${T("Extras","Extra")}</span><div class="toplist">
+    <div><span>${T("Signed parts","Ondertekende delen")}</span><span>${pct(signed,parts)}%</span></div>
+    <div><span>${T("AI pen drawings made","AI-pentekeningen gemaakt")}</span><span>${nf(ai.length)}</span></div>
+    <div><span>${T("AI drawings on the wall","AI-tekeningen op de muur")}</span><span>${nf(aiw.length)}</span></div>
+    <div><span>${T("Median time to finish","Mediaan tijd tot afgewerkt")}</span><span>${med===null?"–":dur(med)}</span></div></div></div>
+  ${top.length?`<div class="stack"><span class="lab">${T("Most active players","Meest actieve spelers")}</span><div class="toplist">${top.map(p=>`<div><span>${esc(p.n)}</span><span>${nf(p.c)} ${T("parts","delen")}</span></div>`).join("")}</div></div>`:""}
+  <p class="muted" style="font-size:12px;line-height:1.4">${T("Counts games played over a link (from the first part) and pieces put on the wall. Games played on one phone that were never published are not stored, so they are not counted.","Telt spellen via een link (vanaf het eerste deel) en stukken op de muur. Spellen op één gsm die nooit gepubliceerd werden, worden niet bewaard en tellen dus niet mee.")}</p>`;
+}
 
 function home(){
   return `
-  <div class="stack" style="gap:6px">
-    <img src="icons/icon.svg" alt="" width="56" height="56" style="border-radius:13px;margin-bottom:6px">
-    <span class="lab">OOJO game</span>
-    <h1>Glitch</h1>
-  </div>
-  <div class="row" style="gap:4px 16px"><button class="ghost chip" style="padding-left:0" onclick="$('#wall-top').scrollIntoView({behavior:'smooth'})">${T("The wall ↓","De muur ↓")}</button>
-  <button class="ghost chip" style="padding-left:0" onclick="openCheat()">${T("Cheat: look at the masters","Spiekbrief: kijk naar de meesters")}</button></div>
-  <p>${T("Each player adds one part of a figure or a sentence without seeing the rest. Only the fold gives a hint. The whole thing is revealed at the end.","Elke speler voegt een deel van een figuur of een zin toe zonder de rest te zien. Alleen de vouw geeft een hint. Op het einde wordt alles onthuld.")}</p>
+  <button class="ghost chip back" style="align-self:flex-start" onclick="go('intro')">← Glitch</button>
+  <div class="stack" style="gap:6px"><span class="lab">${T("Step 2 · choose","Stap 2 · kies")}</span><h2>${T("What will you make?","Wat ga je maken?")}</h2></div>
+  <p class="muted" style="font-size:14px;line-height:1.45">${T("Each player adds one part of a figure or a sentence without seeing the rest. Only the fold gives a hint. The whole thing is revealed at the end.","Elke speler voegt een deel van een figuur of een zin toe zonder de rest te zien. Alleen de vouw geeft een hint. Op het einde wordt alles onthuld.")}</p>
 
   ${tabsHtml()}
   ${resumeBtn()}
@@ -819,8 +929,6 @@ function home(){
   </div>
 
   <div class="stack" id="yours" hidden></div>
-  <hr>
-  ${wallHtml()}
 `;
 }
 
@@ -835,7 +943,7 @@ function turn(){
   const t=THEMES[g.theme]||THEMES["Dream zoo"];
   if(!S.draft) S.draft={strokes:[], st:[], cells:[], hist:[], text:"", name:store.get("ec-name"), kws: g.edition==="draw"? pick(t.nouns,4) : kwFor(n,t), rule: g.rules?dealRule(g):undefined, t0:0};
   const d=S.draft;
-  const top=`<div class="topbar"><span class="lab">${edName(g)}</span><div class="row" style="gap:2px"><button class="ghost chip" onclick="openCheat()">${T("Cheat","Spieken")}</button>${confirmBtn("quit",T("Quit","Stoppen"),T("Quit game?","Spel stoppen?"),"ghost chip","quitGame()")}</div></div>`;
+  const top=`<div class="topbar"><span class="lab">${edName(g)}</span>${confirmBtn("quit",X_ICON,T("Quit game?","Spel stoppen?"),"ghost quit","quitGame()",T("Quit","Stoppen"))}</div>`;
   const prog=top+`<div class="progress">${Array.from({length:g.parts},(_,i)=>`<i class="${i<=n?"on":""}"></i>`).join("")}</div>`;
   const kw=`<div class="stack"><div class="row" style="justify-content:space-between"><span class="lab">Need an idea? · ${esc(g.theme)}</span><button class="ghost chip" onclick="reshuffle()">Shuffle</button></div>
     <div class="chips">${d.kws.map(k=>`<button class="chip kw" onclick="useKw(this.textContent)">${esc(k)}</button>`).join("")}</div></div>`;
@@ -1075,7 +1183,7 @@ function reveal(){
     ? g.turns.map((t,i)=>`<div class="sec"><canvas data-i="${i}"></canvas></div>`).join("")
     : g.turns.map(t=>`<div class="sec wsec">${esc(t.text)}</div>`).join("");
   const ex=S.mode==="wall";
-  return `${ex?`<button class="ghost chip" style="align-self:flex-start;padding-left:0" onclick="go('home');setTimeout(()=>$('#wall-top')?.scrollIntoView(),400)">← ${T("Back to the wall","Terug naar de muur")}</button>`:""}
+  return `${ex?`<button class="ghost chip" style="align-self:flex-start;padding-left:0" onclick="S.atab='wall';go('admin')">← ${T("Back to the wall","Terug naar de muur")}</button>`:""}
   <div class="stack" style="gap:4px"><span class="lab">${ex?T("From the wall","Van de muur"):T("Unfolded","Opengevouwen")}</span><h2>${T("The reveal","De onthulling")}</h2></div>
   <div class="reveal" id="rv">${body}</div>
   <div class="credits">${who.map((w,i)=>`<span>${esc(partNames(g)[i])} · ${esc(w)}${g.turns[i].rule&&ruleById(g.turns[i].rule)?` · ${ruleIcon(g.turns[i].rule,13)} `+esc(ruleT(ruleById(g.turns[i].rule))[0]):""}</span>`).join("")}</div>
@@ -1178,7 +1286,7 @@ function applyTheme(t){ document.documentElement.dataset.theme=t; const b=$("#mo
   document.querySelector('meta[name="theme-color"]')?.setAttribute("content", t==="dark"?"#0047ab":"#f4f6fb"); }
 function toggleTheme(){ const t=document.documentElement.dataset.theme==="dark"?"light":"dark"; store.set("ec-theme",t); applyTheme(t);
   if(S.screen==="turn") pad?.redraw();
-  if(S.screen==="home") loadWall(); if(S.screen==="reveal") render(); }
+  if(S.screen==="admin") render(); if(S.screen==="reveal") render(); }
 applyLang();
 applyTheme(store.get("ec-theme") || (matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"));
 render();
