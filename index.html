@@ -888,7 +888,7 @@ function openInstall(){
   installReturn=document.activeElement;
   const ios=isIOS(), native=!!installEvt;
   const steps = native ? "" : ios
-    ? `<ol class="isteps"><li style="--i:0"><b>1</b><span>${T("Tap","Tik op")} ${SHARE_ICON} <strong>${T("Share","Deel")}</strong> ${T("at the bottom of Safari","onderaan in Safari")}</span></li>
+    ? `<ol class="isteps"><li style="--i:0"><b>1</b><span>${T("Tap","Tik op")} ${SHARE_ICON} <strong>${T("Share","Deel")}</strong></span></li>
        <li style="--i:1"><b>2</b><span>${T("Choose","Kies")} ${PLUS_ICON} <strong>${T("Add to Home Screen","Zet op beginscherm")}</strong></span></li>
        <li style="--i:2"><b>3</b><span>${T("Tap <strong>Add</strong>. Glitch now opens like an app.","Tik op <strong>Voeg toe</strong>. Glitch opent nu als een app.")}</span></li></ol>`
     : `<ol class="isteps"><li style="--i:0"><b>1</b><span>${T("Open the browser menu","Open het menu van je browser")} <strong>⋮</strong></span></li>
