@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" role="img" aria-label="GLITCH appicoon, drie gevouwen witte papierlagen op blauw">
+<defs>
+<linearGradient id="blue" x1="0" y1="0" x2="0.15" y2="1"><stop stop-color="#0735FF"/><stop offset="0.55" stop-color="#0924EF"/><stop offset="1" stop-color="#1011B9"/></linearGradient>
+<linearGradient id="top" gradientUnits="userSpaceOnUse" x1="0" y1="211" x2="0" y2="355"><stop stop-color="#FFFFFF"/><stop offset="1" stop-color="#E3E5F3"/></linearGradient>
+<linearGradient id="fold1" gradientUnits="userSpaceOnUse" x1="0" y1="355" x2="0" y2="457"><stop stop-color="#D8DDF6"/><stop offset="1" stop-color="#848BBD"/></linearGradient>
+<linearGradient id="middle" gradientUnits="userSpaceOnUse" x1="0" y1="433" x2="0" y2="554"><stop stop-color="#FFFFFF"/><stop offset="1" stop-color="#E3E5F3"/></linearGradient>
+<linearGradient id="fold2" gradientUnits="userSpaceOnUse" x1="0" y1="548" x2="0" y2="656"><stop stop-color="#D9DDF0"/><stop offset="1" stop-color="#898FBD"/></linearGradient>
+<linearGradient id="bottom" gradientUnits="userSpaceOnUse" x1="0" y1="626" x2="0" y2="765"><stop stop-color="#FFFFFF"/><stop offset="1" stop-color="#E8EAF3"/></linearGradient>
+<clipPath id="r"><rect width="1024" height="1024" rx="230"/></clipPath>
+</defs>
+<g clip-path="url(#r)">
+<rect width="1024" height="1024" fill="url(#blue)"/>
+<polygon points="220,355 388,211 756,211 624,355" fill="url(#top)"/>
+<polygon points="220,355 624,355 756,433 352,457" fill="url(#fold1)"/>
+<polygon points="220,548 352,457 756,433 624,554" fill="url(#middle)"/>
+<polygon points="220,548 624,554 756,626 352,656" fill="url(#fold2)"/>
+<polygon points="220,765 352,656 756,626 594,765" fill="url(#bottom)"/>
+</g>
+</svg>

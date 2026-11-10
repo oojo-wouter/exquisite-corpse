@@ -5,12 +5,13 @@
   "start_url": "../",
   "scope": "../",
   "display": "standalone",
-  "background_color": "#0047ab",
+  "background_color": "#0924ef",
   "theme_color": "#0047ab",
   "icons": [
-    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png"},
-    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png"},
-    {"src": "icon-1024.png", "sizes": "1024x1024", "type": "image/png"},
-    {"src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+    {"src": "glitch-192.png", "sizes": "192x192", "type": "image/png"},
+    {"src": "glitch-512.png", "sizes": "512x512", "type": "image/png"},
+    {"src": "glitch-1024.png", "sizes": "1024x1024", "type": "image/png"},
+    {"src": "glitch.svg", "sizes": "any", "type": "image/svg+xml"},
+    {"src": "glitch-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
   ]
 }
