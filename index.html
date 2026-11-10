@@ -1028,7 +1028,7 @@ const MOODS=[["alien",["Alien, fish and bird","Alien, vis en vogel"]],["kat-robo
 let carTick=0, carIdx=0, installT=0;
 function intro(){
   return `<div class="intro">
-    <div><h1 class="logo" aria-label="Glitch">Glitch.</h1><p class="base">create the unexpected.</p></div>
+    <div><h1 class="logo" aria-label="Glitch">Glitch.</h1><p class="base">${T("create the unexpected.","creëer het onverwachte.")}</p></div>
     <div class="car" id="car" role="region" aria-roledescription="carousel" aria-label="${T("Creatures made by folding paper","Wezens gemaakt door papier te vouwen")}" tabindex="0">
       ${MOODS.map(([f,a],i)=>`<figure aria-roledescription="slide" aria-label="${i+1} / ${MOODS.length}"><img src="images/intro/${f}-${document.documentElement.dataset.theme==="dark"?"blue":"light"}.webp" alt="${T(a[0],a[1])}" width="720" height="1279" ${i?'loading="lazy"':''} draggable="false"></figure>`).join("")}
     </div>
