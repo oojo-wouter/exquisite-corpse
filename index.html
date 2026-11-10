@@ -1,15 +1,15 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="description" content="Exquisite corpse: draw or write one part, fold, pass it on, unfold the whole thing together.">
-<meta property="og:title" content="Exquisite corpse"><meta property="og:description" content="Someone folded this paper for you. Add your part without seeing the rest.">
+<meta name="description" content="Glitch: draw or write one part, fold, pass it on, unfold the whole thing together.">
+<meta property="og:title" content="Glitch"><meta property="og:description" content="Someone folded this paper for you. Add your part without seeing the rest.">
 <meta name="theme-color" content="#f4f6fb">
 <style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}[hidden]{display:none!important}img{max-width:100%}</style>
-<title>Exquisite Corpse</title>
+<title>Glitch</title>
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
 <link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="manifest" href="icons/manifest.webmanifest">
-<meta name="apple-mobile-web-app-title" content="Corpse">
+<meta name="apple-mobile-web-app-title" content="Glitch">
 <meta property="og:image" content="https://oojo-wouter.github.io/exquisite-corpse/icons/icon-512.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
@@ -282,7 +282,7 @@ const DRAW_PARTS = new Proxy({}, {get:(_,k)=>DRAW_PARTS_L[LANG][k]});
 const WORD_HELP = new Proxy({}, {get:(_,k)=>WORD_HELP_L[LANG][k]});
 function setLang(l){ LANG=l; store.set("ec-lang",l); applyLang(); render(); }
 function applyLang(){ document.documentElement.lang=LANG; const b=document.getElementById("lang"); if(b){ b.textContent=LANG==="nl"?"EN":"NL"; b.setAttribute("aria-label",LANG==="nl"?"Switch to English":"Schakel naar Nederlands"); }
-  if(S?.screen!=="reveal") document.title=T("Exquisite Corpse","Cadavre exquis"); }
+  if(S?.screen!=="reveal") document.title="Glitch"; }
 const W = 1000, H = 700, FOLD = 630, LW = 9;
 
 // ---------- test A: a surprise rule for every part ----------
@@ -763,7 +763,7 @@ async function shareLink(text, btn){
 }
 
 // ---------- screens ----------
-function go(screen){ if(screen!=="waiting") stopPoll(); clearInterval(ruleTick); if(screen!=="reveal" && S.screen==="reveal") document.title=T("Exquisite Corpse","Cadavre exquis"); S.screen=screen; render(); scrollTo(0,0); if(S.game) persist(); }
+function go(screen){ if(screen!=="waiting") stopPoll(); clearInterval(ruleTick); if(screen!=="reveal" && S.screen==="reveal") document.title="Glitch"; S.screen=screen; render(); scrollTo(0,0); if(S.game) persist(); }
 
 function render(){
   const app=$("#app");
@@ -781,7 +781,7 @@ function home(){
   <div class="stack" style="gap:6px">
     <img src="icons/icon.svg" alt="" width="56" height="56" style="border-radius:13px;margin-bottom:6px">
     <span class="lab">OOJO game</span>
-    <h1>${T("Exquisite<br><em>corpse</em>","Cadavre<br><em>exquis</em>")}</h1>
+    <h1>Glitch</h1>
   </div>
   <div class="row" style="gap:4px 16px"><button class="ghost chip" style="padding-left:0" onclick="$('#wall-top').scrollIntoView({behavior:'smooth'})">${T("The wall ↓","De muur ↓")}</button>
   <button class="ghost chip" style="padding-left:0" onclick="openCheat()">${T("Cheat: look at the masters","Spiekbrief: kijk naar de meesters")}</button></div>
@@ -1048,7 +1048,7 @@ function pollReveal(){
   pollT=setTimeout(tick,4000);
 }
 function revealReady(g){
-  document.title=T("● Reveal ready · Exquisite Corpse","● Klaar om te onthullen · Cadavre exquis");
+  document.title=T("● Reveal ready · Glitch","● Klaar om te onthullen · Glitch");
   try{ if(window.Notification && Notification.permission==="granted") new Notification(T("Your exquisite corpse is finished","Je cadavre exquis is klaar"),{body:T("Tap to unfold the reveal.","Tik om open te vouwen.")}).onclick=()=>{ focus(); openGame(g.id); }; }catch(e){}
   const q=$("#quip"); if(q){ clearInterval(quipT); q.textContent=T("It's finished.","Het is klaar."); }
   const note=$("#waitnote"); if(note) note.innerHTML=`<button class="solid wide" onclick="openGame('${g.id}')">${T("Unfold the reveal","Vouw open")}</button>`;
@@ -1156,14 +1156,14 @@ async function composeImage(){
     lines.forEach((l,i)=>x.fillText(l,M,M+60+i*80));
   }
   x.fillStyle="#6f83b3"; x.font="500 20px 'Geist Mono', monospace";
-  x.fillText((T("EXQUISITE CORPSE · ","CADAVRE EXQUIS · ")+(g.edition==="draw"&&g.tags?g.theme+" · ":"")+names.join(", ")).toUpperCase(), M, c.height-M+10);
+  x.fillText(("GLITCH · "+(g.edition==="draw"&&g.tags?g.theme+" · ":"")+names.join(", ")).toUpperCase(), M, c.height-M+10);
   return new Promise(r=>c.toBlob(r,"image/png"));
 }
 async function saveImage(btn){
   btn.disabled=true;
   try{
     const blob=await composeImage();
-    const file=new File([blob],"exquisite-corpse.png",{type:"image/png"});
+    const file=new File([blob],"glitch.png",{type:"image/png"});
     if(navigator.canShare?.({files:[file]})){ try{ await navigator.share({files:[file]}); }catch(e){} }
     else { const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=file.name; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),4000); }
   }catch(e){ toast(T("The image was not saved.","De afbeelding is niet bewaard.")); }
