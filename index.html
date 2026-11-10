@@ -126,6 +126,8 @@ button.play.second{min-height:52px;font-size:15px;letter-spacing:1.5px;margin-to
 .isteps b{font-family:var(--display);font-weight:700;font-size:20px;line-height:1}
 .ish{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;vertical-align:-3px}
 @media (prefers-reduced-motion: reduce){.iapp,.iapp img,.iapp span,.isteps li{animation:none}}
+.mclose{position:absolute;top:8px;right:8px;width:44px;height:44px;min-height:44px;padding:0;border:0;display:grid;place-items:center;z-index:1}
+.mclose svg{width:18px;height:18px;stroke:currentColor;stroke-width:3.2;stroke-linecap:square;fill:none}
 html,body{height:100%}
 body{background:var(--paper);color:var(--ink);font-family:var(--ui);font-size:15px;line-height:25px;font-weight:400;
   padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));
@@ -867,17 +869,16 @@ after.intro=()=>{
 };
 
 // ---------- invite to put Glitch on the home screen (once, on the start screen; not when already installed) ----------
-let installEvt=null;
+let installEvt=null, installClosed=false;
 addEventListener("beforeinstallprompt",e=>{ e.preventDefault(); installEvt=e; });
-addEventListener("appinstalled",()=>{ store.set("ec-installed","1"); closeInstall(); });
+addEventListener("appinstalled",()=>{ store.set("ec-installed","1"); installClosed=true; closeInstall(); });
 const isStandalone=()=>matchMedia("(display-mode: standalone)").matches||navigator.standalone===true;
 const isIOS=()=>/iphone|ipad|ipod/i.test(navigator.userAgent)||(/Macintosh/.test(navigator.userAgent)&&navigator.maxTouchPoints>1);
 const isPhone=()=>matchMedia("(pointer: coarse)").matches;
 function maybeInstall(){
-  if(isStandalone()||store.get("ec-installed")||$("#install")||$("#magic")) return;
-  const last=+store.get("ec-install-later")||0; if(Date.now()-last<14*864e5) return;
+  // for now: on every visit until closed (X or a button); closing hides it for this visit only
+  if(isStandalone()||installClosed||$("#install")||$("#magic")) return;
   if(S.screen!=="intro") return;
-  if(!installEvt && !isPhone()) return;
   openInstall();
 }
 const SHARE_ICON='<svg class="ish" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 13V2.5M6.5 6L10 2.5 13.5 6"/><path d="M6 9H4.5v8.5h11V9H14"/></svg>';
@@ -894,6 +895,7 @@ function openInstall(){
        <li style="--i:1"><b>2</b><span>${T("Choose","Kies")} <strong>${T("Install app","App installeren")}</strong> ${T("or","of")} <strong>${T("Add to Home screen","Toevoegen aan startscherm")}</strong></span></li></ol>`;
   const bg=document.createElement("div"); bg.className="magicbg"; bg.id="install";
   bg.innerHTML=`<div class="magic" role="dialog" aria-modal="true" aria-labelledby="install-h">
+    <button class="mclose" onclick="laterInstall()" aria-label="${T("Close","Sluiten")}">${X_ICON}</button>
     <div class="spark ispark" aria-hidden="true">${Array.from({length:16},(_,i)=>`<i style="--a:${i*360/16}deg;--d:${(i%4)*50}ms"></i>`).join("")}</div>
     <div class="iapp"><img src="icons/glitch-192.png" alt="" width="84" height="84"><span>Glitch</span></div>
     <span class="lab">${T("Get the app","Download de app")}</span>
@@ -908,9 +910,9 @@ function openInstall(){
   document.body.appendChild(bg); document.body.style.overflow="hidden"; $("#install-go").focus();
 }
 function closeInstall(){ if(!$("#install")) return; $("#install").remove(); document.body.style.overflow=""; installReturn?.focus?.(); }
-function laterInstall(){ store.set("ec-install-later",String(Date.now())); closeInstall(); }
+function laterInstall(){ installClosed=true; closeInstall(); }
 async function doInstall(){ const e=installEvt; if(!e) return laterInstall(); installEvt=null;
-  try{ e.prompt(); const r=await e.userChoice; if(r?.outcome==="accepted") store.set("ec-installed","1"); else store.set("ec-install-later",String(Date.now())); }catch(_){} closeInstall(); }
+  try{ e.prompt(); const r=await e.userChoice; if(r?.outcome==="accepted") store.set("ec-installed","1"); }catch(_){} installClosed=true; closeInstall(); }
 addEventListener("keydown",e=>{ if(e.key==="Escape" && $("#install")) laterInstall(); });
 
 // ---------- admin: the wall and the numbers ----------
