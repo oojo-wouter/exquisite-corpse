@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="description" content="Glitch: draw or write one part, fold, pass it on, unfold the whole thing together.">
 <meta property="og:title" content="Glitch"><meta property="og:description" content="Someone folded this paper for you. Add your part without seeing the rest.">
 <meta name="theme-color" content="#f4f6fb">
@@ -141,6 +141,9 @@ button.play.second{min-height:52px;font-size:15px;letter-spacing:1.5px;margin-to
 .mclose{position:absolute;top:8px;right:8px;width:44px;height:44px;min-height:44px;padding:0;border:0;display:grid;place-items:center;z-index:1}
 .mclose svg{width:18px;height:18px;stroke:currentColor;stroke-width:3.2;stroke-linecap:square;fill:none}
 html,body{height:100%}
+/* fixed view on phones: no double-tap or pinch zoom of the page (the paper has its own zoom) */
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+*{touch-action:manipulation}
 body{background:var(--paper);color:var(--ink);font-family:var(--ui);font-size:15px;line-height:25px;font-weight:400;
   padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));
   -webkit-tap-highlight-color:transparent}
@@ -176,6 +179,7 @@ button.wide.solid{min-height:64px;font-size:20px;letter-spacing:2px}
 .chip.kw{font-family:var(--display);text-transform:none;letter-spacing:-.3px;font-weight:300;font-size:18px;border-color:var(--ink)}
 input[type=text],textarea{font:inherit;width:100%;box-sizing:border-box;background:transparent;border:0;border-bottom:1.5px solid var(--ink);
   padding:8px 0;color:var(--ink);border-radius:0}
+input[type=text]{font-size:16px}
 textarea{font-family:var(--display);font-size:30px;line-height:33.75px;font-weight:300;letter-spacing:-.75px;resize:none;min-height:80px}
 
 .sheet{position:relative;background:var(--card);border:1px solid var(--line);touch-action:none;user-select:none;-webkit-user-select:none}
@@ -480,6 +484,13 @@ button.warn{background:var(--ink);color:var(--paper)}
 <div class="toast" id="toast" hidden></div>
 
 <script>
+// iOS Safari ignores user-scalable=no, so block page zoom gestures here.
+// The paper's own pinch/pan uses pointer events and keeps working.
+(()=>{ const stop=e=>e.preventDefault();
+  ["gesturestart","gesturechange","gestureend"].forEach(t=>document.addEventListener(t,stop,{passive:false}));
+  document.addEventListener("dblclick",stop,{passive:false});
+  document.addEventListener("touchmove",e=>{ if(e.touches.length>1 && !e.target.closest?.(".sheet")) e.preventDefault(); },{passive:false});
+})();
 // ---------- content ----------
 const THEMES = {
   "Dream zoo": {
