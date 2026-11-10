@@ -37,7 +37,7 @@
 .logo{width:100%;max-width:460px;aspect-ratio:1000/214;margin-left:-1.5%;color:transparent;overflow:hidden;background:var(--ink);
   -webkit-mask:url(images/glitch-title.webp) left center/contain no-repeat;mask:url(images/glitch-title.webp) left center/contain no-repeat}
 .base{font-family:var(--display);font-weight:300;font-size:23px;line-height:30px;letter-spacing:-.575px;margin-top:4px}
-.car{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;border:1.5px solid var(--ink);background:#0047ab}
+.car{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;border:1.5px solid var(--ink);background:var(--paper)}
 .car::-webkit-scrollbar{display:none}
 .car figure{flex:0 0 100%;margin:0;scroll-snap-align:center;scroll-snap-stop:always}
 .car img{display:block;width:100%;height:clamp(260px, calc(100svh - 360px), 640px);object-fit:cover;object-position:50% 62%;user-select:none;-webkit-user-drag:none}
@@ -295,9 +295,9 @@ const THEMES = {
 // ---------- language: English or Dutch, remembered per phone ----------
 let LANG=(()=>{ try{ const l=localStorage.getItem("ec-lang"); if(l==="nl"||l==="en") return l; }catch(e){} return /^nl\b/i.test(navigator.language||"")?"nl":"en"; })();
 const T=(en,nl)=>LANG==="nl"?nl:en;
-const DRAW_PARTS_L = {en:{3:["Head","Body","Legs"],4:["Head","Torso","Legs","Feet"]}, nl:{3:["Hoofd","Lijf","Benen"],4:["Hoofd","Romp","Benen","Voeten"]}};
+const DRAW_PARTS_L = {en:{3:["Head","Body","Legs"],4:["Head","Body","Belly","Legs"]}, nl:{3:["Hoofd","Lijf","Benen"],4:["Hoofd","Lijf","Buik","Benen"]}};
 const WORD_PARTS_L = {en:{3:["Who","Does what","Where"],4:["Who","Does what","To whom","Where"]}, nl:{3:["Wie","Doet wat","Waar"],4:["Wie","Doet wat","Met wie","Waar"]}};
-// help line and example per part; 3 parts is the current game, 4 keeps older links working
+// help line and example per part; Words uses 3 parts, 4 keeps older links working
 const WORD_HELP_L = {en:{
   3:[["Who or what? An adjective and a noun.","The glass horse"],
      ["What does it do? A verb, and to whom or what if you like.","swallows a sleeping lighthouse"],
@@ -432,7 +432,7 @@ function resume(){ const sv=savedGame(); if(!sv) return; S.mode="local"; S.game=
 function quitGame(){ if(S.mode==="local") store.set("ec-game",""); S.game=null; S.draft=null; location.hash=""; go("home"); }
 function newGame(){
   const blocks=S.tab==="blocks", edition=blocks?"draw":S.edition;
-  return { id: Math.random().toString(36).slice(2,8), edition, theme:S.theme, parts:3, tech:blocks?"blocks":"pen", rules:!blocks,
+  return { id: Math.random().toString(36).slice(2,8), edition, theme:S.theme, parts:edition==="draw"?4:3, tech:blocks?"blocks":"pen", rules:!blocks,
     start: blocks ? seedCells() : edition==="draw" ? starterDots() : [], turns:[] };
 }
 function starterDots(){
@@ -797,7 +797,7 @@ function intro(){
   return `<div class="intro">
     <div><h1 class="logo" aria-label="Glitch">Glitch.</h1><p class="base">create the unexpected.</p></div>
     <div class="car" id="car" role="region" aria-roledescription="carousel" aria-label="${T("Creatures made by folding paper","Wezens gemaakt door papier te vouwen")}" tabindex="0">
-      ${MOODS.map(([f,a],i)=>`<figure aria-roledescription="slide" aria-label="${i+1} / ${MOODS.length}"><img src="images/intro/${f}.webp" alt="${T(a[0],a[1])}" width="720" height="1279" ${i?'loading="lazy"':''} draggable="false"></figure>`).join("")}
+      ${MOODS.map(([f,a],i)=>`<figure aria-roledescription="slide" aria-label="${i+1} / ${MOODS.length}"><img src="images/intro/${f}-${document.documentElement.dataset.theme==="dark"?"blue":"light"}.webp" alt="${T(a[0],a[1])}" width="720" height="1279" ${i?'loading="lazy"':''} draggable="false"></figure>`).join("")}
     </div>
     <div class="dots" role="group" aria-label="${T("Images","Beelden")}">${MOODS.map((_,i)=>`<button aria-label="${T("Image","Beeld")} ${i+1}" onclick="carTo(${i})"><i></i></button>`).join("")}</div>
     <button class="solid play" onclick="go('home')">Play<svg viewBox="0 0 28 20" aria-hidden="true"><path d="M1 10h24M17 2l8 8-8 8"/></svg></button>
@@ -849,7 +849,7 @@ async function loadStats(){
   const med=median(times);
   const kinds=[["pen",T("Drawing · pen + rules","Tekenen · pen + regels")],["blocks",T("Drawing · blocks","Tekenen · blokken")],["words",T("Words","Woorden")]].map(([k,l])=>{ const a=G.filter(g=>g.kind===k); return {l,c:a.length,d:a.filter(g=>g.done).length}; });
   const maxK=Math.max(1,...kinds.map(k=>k.c));
-  const reach=[1,2,3].map(k=>({k,c:G.filter(g=>g.tu.length>=k).length}));
+  const reach=[1,2,3,4].map(k=>({k,c:G.filter(g=>g.tu.length>=k).length}));
   // last 14 days, started games per day
   const d0=new Date(); d0.setHours(0,0,0,0);
   const days=Array.from({length:14},(_,i)=>{ const a=d0.getTime()-(13-i)*DAY; return {a,c:G.filter(g=>g.t>=a&&g.t<a+DAY).length}; });
@@ -860,7 +860,7 @@ async function loadStats(){
   if(!started) ins.push(T("No games in the database yet. Games played over a link are counted from the first part.","Nog geen spellen in de databank. Spellen via een link tellen mee vanaf het eerste deel."));
   else{
     ins.push(T(`${pct(finished.length,started)}% of games get finished: ${nf(finished.length)} of ${nf(started)}.`,`${pct(finished.length,started)}% van de spellen wordt afgewerkt: ${nf(finished.length)} van ${nf(started)}.`));
-    const drop=[[1,2],[2,3]].map(([a,b])=>({a,lost:reach[a-1].c-reach[b-1].c})).sort((x,y)=>y.lost-x.lost)[0];
+    const drop=[[1,2],[2,3],[3,4]].map(([a,b])=>({a,lost:G.filter(g=>g.tu.length===a&&!g.done).length})).sort((x,y)=>y.lost-x.lost)[0];
     if(drop.lost>0) ins.push(T(`Most games stop after part ${drop.a}: ${nf(drop.lost)} never got part ${drop.a+1}.`,`De meeste spellen stoppen na deel ${drop.a}: ${nf(drop.lost)} kregen nooit deel ${drop.a+1}.`));
     const fav=[...kinds].sort((a,b)=>b.c-a.c)[0]; if(fav.c) ins.push(T(`Most played: ${fav.l} (${pct(fav.c,started)}% of games).`,`Meest gespeeld: ${fav.l} (${pct(fav.c,started)}% van de spellen).`));
     if(finished.length) ins.push(T(`${pct(onWall,finished.length)}% of finished pieces were published to the wall.`,`${pct(onWall,finished.length)}% van de afgewerkte stukken kwam op de muur.`));
@@ -885,7 +885,7 @@ async function loadStats(){
   <div class="stack"><span class="lab">${T("What people play","Wat mensen spelen")}</span><div class="hbars">
     ${kinds.map(k=>`<div class="hbar" title="${esc(k.l)}: ${k.c} ${T("started","gestart")}, ${k.d} ${T("finished","afgewerkt")}"><span>${esc(k.l)}</span><span>${nf(k.c)} · ${pct(k.d,k.c)}% ${T("finished","af")}</span><div class="tr"><i style="width:${k.c/maxK*100}%"></i></div></div>`).join("")}</div></div>
   <div class="stack"><span class="lab">${T("How far games get","Hoe ver spellen geraken")}</span><div class="hbars">
-    ${reach.map(r=>`<div class="hbar"><span>${T("Reached part","Tot deel")} ${r.k}</span><span>${nf(r.c)} · ${pct(r.c,started)}%</span><div class="tr"><i style="width:${pct(r.c,started)}%"></i></div></div>`).join("")}</div></div>
+    ${reach.filter(r=>r.k<4||G.some(g=>g.parts>=4)).map(r=>`<div class="hbar"><span>${T("Reached part","Tot deel")} ${r.k}</span><span>${nf(r.c)} · ${pct(r.c,started)}%</span><div class="tr"><i style="width:${pct(r.c,started)}%"></i></div></div>`).join("")}</div></div>
   <div class="stack"><span class="lab">${T("Extras","Extra")}</span><div class="toplist">
     <div><span>${T("Signed parts","Ondertekende delen")}</span><span>${pct(signed,parts)}%</span></div>
     <div><span>${T("AI pen drawings made","AI-pentekeningen gemaakt")}</span><span>${nf(ai.length)}</span></div>
@@ -907,7 +907,8 @@ function home(){
     <div class="steps" aria-label="${T("How to play Blocks","Zo speel je Blokken")}">
       <div><b>1</b><span>${T("<strong>Build a head.</strong> Tap or drag over the grid to paint small blocks, starting at the squares. Tap a block again to turn it. Run a few blocks into the bottom row.","<strong>Bouw een hoofd.</strong> Tik of sleep over het rooster om kleine blokjes te zetten, begin bij de vierkantjes. Tik nog eens om een blokje te draaien. Laat een paar blokken doorlopen tot in de onderste rij.")}</span></div>
       <div><b>2</b><span>${T("<strong>Build a body.</strong> You only see a faint copy of the bottom row above. Build on from there.","<strong>Bouw een lijf.</strong> Je ziet alleen een vage kopie van de onderste rij erboven. Bouw daar verder.")}</span></div>
-      <div><b>3</b><span>${T("<strong>Build legs.</strong> Same again.","<strong>Bouw benen.</strong> Net hetzelfde.")}</span></div>
+      <div><b>3</b><span>${T("<strong>Build a belly.</strong> Same again.","<strong>Bouw een buik.</strong> Net hetzelfde.")}</span></div>
+      <div><b>4</b><span>${T("<strong>Build legs.</strong> The last fold. Give it something to stand on.","<strong>Bouw benen.</strong> De laatste vouw. Geef het iets om op te staan.")}</span></div>
       <div class="end">${T("Then unfold it and watch the creature build itself, block by block.","Vouw dan open en kijk hoe het wezen zichzelf bouwt, blok per blok.")}</div>
     </div></div>` : `<div class="stack"><span class="lab">${T("Edition","Editie")}</span>
     <div class="seg">
@@ -917,7 +918,8 @@ function home(){
     ${S.edition==="draw" ? `<div class="steps" aria-label="${T("How to play Drawing","Zo speel je Tekenen")}">
       <div><b>1</b><span>${T("<strong>Draw a head.</strong> Start from the dots. Let a few lines run down past the dashed line.","<strong>Teken een hoofd.</strong> Begin bij de stippen. Laat een paar lijnen doorlopen tot over de stippellijn.")}</span></div>
       <div><b>2</b><span>${T("<strong>Draw a body.</strong> You only see dots where the lines above ended. Start from those.","<strong>Teken een lijf.</strong> Je ziet alleen stippen waar de lijnen erboven stopten. Begin daar.")}</span></div>
-      <div><b>3</b><span>${T("<strong>Draw legs.</strong> Same again.","<strong>Teken benen.</strong> Net hetzelfde.")}</span></div>
+      <div><b>3</b><span>${T("<strong>Draw a belly.</strong> Same again.","<strong>Teken een buik.</strong> Net hetzelfde.")}</span></div>
+      <div><b>4</b><span>${T("<strong>Draw legs.</strong> The last fold. Give it something to stand on.","<strong>Teken benen.</strong> De laatste vouw. Geef het iets om op te staan.")}</span></div>
       <div class="end">${T("Then unfold it and see the whole creature for the first time.","Vouw dan open en zie het hele wezen voor het eerst.")}</div>
     </div>` : `<div class="steps" aria-label="${T("How to play Words","Zo speel je Woorden")}">
       ${[0,1,2].map(i=>`<div><b>${i+1}</b><span><strong>${WORD_PARTS[3][i]}?</strong> <i>${WORD_HELP[3][i][1]}</i></span></div>`).join("")}
@@ -1289,7 +1291,7 @@ async function revealShare(btn){
 function applyTheme(t){ document.documentElement.dataset.theme=t; const b=$("#mode"); if(b) b.setAttribute("aria-label", t==="dark"?T("Switch to light mode","Naar lichte modus"):T("Switch to dark mode","Naar donkere modus"));
   document.querySelector('meta[name="theme-color"]')?.setAttribute("content", t==="dark"?"#0047ab":"#f4f6fb"); }
 function toggleTheme(){ const t=document.documentElement.dataset.theme==="dark"?"light":"dark"; store.set("ec-theme",t); applyTheme(t);
-  if(S.screen==="turn") pad?.redraw();
+  if(S.screen==="turn") pad?.redraw(); if(S.screen==="intro") render();
   if(S.screen==="admin") render(); if(S.screen==="reveal") render(); }
 applyLang();
 applyTheme(store.get("ec-theme") || (matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"));
