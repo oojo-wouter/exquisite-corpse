@@ -1001,8 +1001,8 @@ function home(){
   const words=S.edition==="words", blocks=!words&&S.tab==="blocks";
   return `
   <button class="ghost chip back" style="align-self:flex-start" onclick="go('intro')">← Glitch</button>
-  <div class="stack" style="gap:6px"><span class="lab">${words?T("Words · step 2","Woorden · stap 2"):T("Drawing · step 2","Tekenen · stap 2")}</span><h2>${words?T("Make a sentence together","Maak samen een zin"):T("How do you want to draw?","Hoe wil je tekenen?")}</h2></div>
-  <p class="muted" style="font-size:14px;line-height:1.45">${words?T("Each player writes one part of a sentence without seeing the rest. Only the last word gives a hint. The whole sentence is revealed at the end.","Elke speler schrijft een deel van een zin zonder de rest te zien. Alleen het laatste woord geeft een hint. Op het einde wordt de hele zin onthuld."):T("Each player draws one part of a creature without seeing the rest. Only the fold gives a hint. The whole thing is revealed at the end.","Elke speler tekent een deel van een wezen zonder de rest te zien. Alleen de vouw geeft een hint. Op het einde wordt alles onthuld.")}</p>
+  <div class="stack" style="gap:6px">${words?`<span class="lab">${T("Words · step 2","Woorden · stap 2")}</span>`:""}<h2>${words?T("Make a sentence together","Maak samen een zin"):T("How do you want to draw?","Hoe wil je tekenen?")}</h2></div>
+  ${words?`<p class="muted" style="font-size:14px;line-height:1.45">${T("Each player writes one part of a sentence without seeing the rest. Only the last word gives a hint. The whole sentence is revealed at the end.","Elke speler schrijft een deel van een zin zonder de rest te zien. Alleen het laatste woord geeft een hint. Op het einde wordt de hele zin onthuld.")}</p>`:""}
   ${words?"":toolPick()}
   ${resumeBtn()}
   <div class="stack">
