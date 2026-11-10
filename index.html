@@ -251,11 +251,17 @@ textarea{font-family:var(--display);font-size:30px;line-height:33.75px;font-weig
 .steps .end{grid-template-columns:1fr;color:var(--grey);font-size:13px}
 .exlink{display:inline;justify-self:start;margin-top:4px;min-height:0;padding:0;border:0;background:none;color:var(--ink);font:inherit;font-weight:600;text-transform:none;letter-spacing:0;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
 /* examples pop-up takes the images' own background so they sit without a frame */
-.expop{background:#fefefe;padding:18px 0 10px;gap:8px}
-:root[data-theme="dark"] .expop{background:#0144a1}
-.expop h2{padding:0 60px 0 20px}
-.exclose{position:absolute;top:8px;right:8px}
-.excar img{height:min(62svh,560px);object-fit:contain;object-position:center}
+/* fullscreen, so the images get as much room as the viewport allows */
+.magicbg.exbg{padding:0;background:#fefefe;backdrop-filter:none;-webkit-backdrop-filter:none}
+:root[data-theme="dark"] .magicbg.exbg{background:#0144a1}
+.magicbg.exbg .magic.expop{max-width:none;max-height:none;width:100%;height:100%;height:100svh;border:0;background:transparent;overflow:hidden;animation:fadein .25s ease-out;
+  padding:max(12px,env(safe-area-inset-top)) 0 max(10px,env(safe-area-inset-bottom));gap:6px;display:flex;flex-direction:column}
+.expop h2{padding:0 64px 0 max(20px,env(safe-area-inset-left));min-height:44px;display:flex;align-items:center;margin:0}
+.exclose{position:absolute;top:max(12px,env(safe-area-inset-top));right:max(8px,env(safe-area-inset-right))}
+.excar{flex:1;min-height:0;outline:none}
+.excar figure{display:flex;align-items:center;justify-content:center;height:100%}
+.excar img{width:100%;height:100%;object-fit:contain;object-position:center}
+.exdots{margin-top:0}
 .rules{background:var(--card);border:1px solid var(--line)}
 .rules summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px;font-size:15px;font-weight:600;min-height:48px;box-sizing:border-box}
 .rules summary::-webkit-details-marker{display:none}
@@ -1053,7 +1059,7 @@ const moodSrc=f=>`images/intro/${f}-${document.documentElement.dataset.theme==="
 let exIdx=0, exReturn=null;
 function openExamples(){
   exReturn=document.activeElement; exIdx=0;
-  const bg=document.createElement("div"); bg.className="magicbg"; bg.id="examples";
+  const bg=document.createElement("div"); bg.className="magicbg exbg"; bg.id="examples";
   bg.innerHTML=`<div class="magic expop" role="dialog" aria-modal="true" aria-labelledby="ex-h">
     <button class="quit exclose" onclick="closeExamples()" aria-label="${T("Close","Sluiten")}">${X_ICON}</button>
     <h2 id="ex-h">${T("Examples","Voorbeelden")}</h2>
