@@ -359,7 +359,7 @@ button.warn{background:var(--ink);color:var(--paper)}
   .intro{min-height:calc(100svh - 140px);gap:24px}
   .logo{max-width:620px}
   .base{font-size:28px;line-height:36px}
-  .car img{height:clamp(320px, calc(100svh - 560px), 900px)}
+  .intro .car img{--h:clamp(320px, calc(100svh - 520px), 980px)}
   .toolpick{gap:14px}.tool{padding:20px}
   .steps div{padding:14px 18px;font-size:15px}
   .wall{columns:3}
@@ -376,10 +376,10 @@ button.warn{background:var(--ink);color:var(--paper)}
   .wrap[data-screen="admin"]{max-width:1100px}
   /* start screen: title and buttons left, the images right, shown whole */
   .wrap[data-screen="intro"]{max-width:1240px}
-  .intro{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:1fr auto auto auto 1fr auto;column-gap:48px;row-gap:12px;min-height:0}
+  .intro{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);grid-template-rows:1fr auto auto auto 1fr auto;column-gap:48px;row-gap:12px;min-height:0}
   .intro>div:first-child{grid-column:1;grid-row:2;margin-bottom:28px}
   .intro .car{grid-column:2;grid-row:1/6}
-  .intro .car img{height:calc(100svh - 150px);object-fit:contain;object-position:50% 50%}
+  .intro .car img{--h:calc(100svh - 150px)}
   .intro .dots{grid-column:2;grid-row:6;margin-top:-6px}
   .intro .play{grid-column:1;grid-row:3;margin-top:0}
   .intro .play.second{grid-column:1;grid-row:4;margin-top:0}
@@ -417,7 +417,7 @@ button.warn{background:var(--ink);color:var(--paper)}
   .rule{padding:10px 12px}.rule .rt{font-size:22px}.ctr .big{font-size:40px}
   .intro{row-gap:8px;column-gap:28px}
   .intro .car{margin-top:46px}
-  .intro .car img{height:calc(100svh - 112px)}
+  .intro .car img{--h:calc(100svh - 112px)}
   .intro>div:first-child{margin-bottom:12px}
   .logo{max-width:360px}
   .base{font-size:19px;line-height:24px}
@@ -434,6 +434,14 @@ button.warn{background:var(--ink);color:var(--paper)}
   .mrules div{padding:6px 0}
   .mrules b{font-size:16px}
   .iapp{margin:0}.iapp img{width:60px;height:60px;border-radius:14px}
+}
+
+/* wide screens: the images have a lot of empty paper around the drawing, so crop to the drawing and show it as big as the space allows */
+@media (orientation: landscape) and (min-width: 640px), (orientation: portrait) and (min-width: 700px){
+  .intro .car figure{display:flex;justify-content:center}
+  .intro .car img{width:min(100%, calc(var(--h) * 720 / 860));height:auto;aspect-ratio:720/860;object-fit:cover;object-position:50% 72%}
+  .excar{container-type:size}
+  .excar img{width:min(100cqw, 100cqh * 720 / 860);height:auto;max-height:100%;aspect-ratio:720/860;object-fit:cover;object-position:50% 72%}
 }
 
 /* iPad landscape and desktop: roomier type */
@@ -456,7 +464,7 @@ button.warn{background:var(--ink);color:var(--paper)}
   .split[data-screen="home"]{max-width:1160px;grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:64px}
   .split[data-screen="home"]>.gb{padding-top:62px}
   .split[data-screen="turn"]>.gb .sheet{top:72px;width:min(100%, calc((100svh - 112px) * 10 / 7))}
-  .intro .car img{height:calc(100svh - 164px)}
+  .intro .car img{--h:calc(100svh - 164px)}
   h2{font-size:42px;line-height:46px;letter-spacing:-1.1px}
   .logo{max-width:680px}
   .base{font-size:30px;line-height:38px}
