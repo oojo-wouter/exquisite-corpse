@@ -934,7 +934,7 @@ async function loadWall(){
     <div class="aitag">${AI_BADGE}</div><canvas class="sq" data-ai="${i}"></canvas><div class="wq wqs">${esc(wordsText(e))}</div>
     <div class="tg">${T("AI drawing · words by","AI-tekening · woorden van")} ${esc(e.turns.map(t=>t.name).filter(Boolean).join(" · ")||T("players","spelers"))}</div></button>`
     :`<button onclick="openWall(${i})" aria-label="${T("Open piece","Open stuk")} ${i+1}">
-    ${e.edition==="draw"? e.turns.map((t,j)=>`<canvas data-ex="${i}" data-p="${j}"></canvas>`).join("") : `<div class="wq">${e.turns.map(t=>esc(t.text)).join(" ")}</div>`}
+    ${e.edition==="draw"? e.turns.map((t,j)=>`<canvas data-ex="${i}" data-p="${j}"></canvas>`).join("") : `<div class="wq">${e.turns.map((t,j)=>esc(partText(e,j))).join(" ")}</div>`}
     <div class="tg">${esc(e.turns.map(t=>t.name).filter(Boolean).join(" · ")||edName(e))}${playedRules(e)}</div></button>`).join("");
   w.querySelectorAll("canvas[data-ai]").forEach(c=>paintAI(c, WALL[+c.dataset.ai]));
   w.querySelectorAll("canvas[data-ex]").forEach(c=>{ sizeCanvas(c); paintPart(c.getContext("2d"), WALL[+c.dataset.ex], +c.dataset.p); });
@@ -1617,7 +1617,7 @@ function reveal(){
   const g=S.game, who=g.turns.map((t,i)=>t.name||(T("Player ","Speler ")+(i+1)));
   const body = g.edition==="draw"
     ? g.turns.map((t,i)=>`<div class="sec"><canvas data-i="${i}"></canvas></div>`).join("")
-    : g.turns.map(t=>`<div class="sec wsec">${esc(t.text)}</div>`).join("");
+    : g.turns.map((t,i)=>`<div class="sec wsec">${esc(partText(g,i))}</div>`).join("");
   const ex=S.mode==="wall";
   return `<div class="ga">${ex?`<button class="ghost chip" style="align-self:flex-start;padding-left:0" onclick="S.atab='wall';go('admin')">← ${T("Back to the wall","Terug naar de muur")}</button>`:""}
   <div class="stack" style="gap:4px"><span class="lab">${ex?T("From the wall","Van de muur"):T("Unfolded","Opengevouwen")}</span><h2>${T("The reveal","De onthulling")}</h2></div></div>
@@ -1669,7 +1669,7 @@ function build3d(){
         c.style.transform=`translateZ(${z}px)`; pb.appendChild(c);
         paint(c.getContext("2d"), t.strokes, {st:t.st, clear:true, start:i===0?g.start:null, pencil:g.pencil});
       }else{
-        const d=document.createElement("div"); d.className="wt"+(k?" cp":""); d.textContent=t.text; d.style.transform=`translateZ(${z}px)`; pb.appendChild(d);
+        const d=document.createElement("div"); d.className="wt"+(k?" cp":""); d.textContent=partText(g,i); d.style.transform=`translateZ(${z}px)`; pb.appendChild(d);
       }
     }
     rot.appendChild(pb);
@@ -1683,7 +1683,10 @@ function build3d(){
   const up=()=>drag=null; obj.addEventListener("pointerup",up); obj.addEventListener("pointercancel",up);
   rot.style.transform=`rotateX(-8deg) rotateY(${ang}deg)`; tick();
 }
-const wordsText = g => g.turns.map(t=>t.text).join(" ").replace(/\s+/g," ").trim().replace(/^./,c=>c.toUpperCase()).replace(/([^.!?])$/,"$1.");
+// Words: only the first part starts with a capital; later parts start lowercase
+// (a lone "I" or an all-caps word like "NASA" stays as written).
+const partText = (g,i) => { const t=(g.turns[i]?.text||"").trim(); if(!i) return t.replace(/^./,c=>c.toUpperCase()); const w=t.split(/\s/)[0]; return /^\p{Lu}+$/u.test(w)&&(w.length>1||w==="I")?t:t.replace(/^./,c=>c.toLowerCase()); };
+const wordsText = g => g.turns.map((t,i)=>partText(g,i)).join(" ").replace(/\s+/g," ").trim().replace(/^./,c=>c.toUpperCase()).replace(/([^.!?])$/,"$1.");
 
 async function composeImage(){
   await document.fonts?.ready;
@@ -1695,7 +1698,7 @@ async function composeImage(){
     g.turns.forEach((t,i)=>{ const sc=document.createElement("canvas"); sc.width=W; sc.height=H; paintPart(sc.getContext("2d"), g, i, 1, {light:true}); x.drawImage(sc,M,M+i*H); });
   }else{
     c.width=1140; const lines=[]; x.font="300 68px 'Space Grotesk', sans-serif";
-    g.turns.forEach(t=>{ let line=""; for(const w of t.text.split(/\s+/)){ const tr=(line+" "+w).trim(); if(x.measureText(tr).width>c.width-M*2 && line){ lines.push(line); line=w; } else line=tr; } lines.push(line); lines.push(""); });
+    g.turns.forEach((t,i)=>{ let line=""; for(const w of partText(g,i).split(/\s+/)){ const tr=(line+" "+w).trim(); if(x.measureText(tr).width>c.width-M*2 && line){ lines.push(line); line=w; } else line=tr; } lines.push(line); lines.push(""); });
     lines.pop(); c.height=M*2+lines.length*80+80;
     x.fillStyle="#f4f6fb"; x.fillRect(0,0,c.width,c.height); x.fillStyle="#0047ab"; x.font="300 68px 'Space Grotesk', sans-serif";
     lines.forEach((l,i)=>x.fillText(l,M,M+60+i*80));
