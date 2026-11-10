@@ -34,9 +34,9 @@
 .intro{min-height:calc(100svh - 98px);display:flex;flex-direction:column;gap:18px}
 .intro h1{font-weight:700;letter-spacing:-.04em;text-transform:uppercase}
 /* hand-drawn title: the image is only a mask, so the ink follows the theme (cobalt on light, light on cobalt) */
-.logo{width:100%;max-width:460px;aspect-ratio:1000/214;margin-left:-1.5%;color:transparent;overflow:hidden;background:var(--ink);
-  -webkit-mask:url(images/glitch-title.webp) left center/contain no-repeat;mask:url(images/glitch-title.webp) left center/contain no-repeat}
-.base{font-family:var(--display);font-weight:300;font-size:23px;line-height:30px;letter-spacing:-.575px;margin-top:4px}
+.logo{width:100%;max-width:460px;aspect-ratio:1000/214;margin-inline:auto;color:transparent;overflow:hidden;background:var(--ink);
+  -webkit-mask:url(images/glitch-title.webp) center/contain no-repeat;mask:url(images/glitch-title.webp) center/contain no-repeat}
+.base{font-family:var(--display);font-weight:300;font-size:23px;line-height:30px;letter-spacing:-.575px;margin-top:4px;text-align:center;text-transform:uppercase}
 .car{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;background:transparent;-webkit-mask:linear-gradient(90deg,transparent,#000 4%,#000 96%,transparent);mask:linear-gradient(90deg,transparent,#000 4%,#000 96%,transparent)}
 .car::-webkit-scrollbar{display:none}
 /* start screen takes the images' own background, so they sit on the page without a frame */
@@ -48,7 +48,7 @@
 .dots button{min-height:32px;width:32px;padding:0;border:0;display:grid;place-items:center}
 .dots button i{width:8px;height:8px;border-radius:50%;border:1.5px solid var(--ink);box-sizing:border-box}
 .dots button[aria-current="true"] i{background:var(--ink)}
-button.play{border-radius:0;width:100%;min-height:64px;display:flex;justify-content:space-between;align-items:center;padding:0 22px;font-size:20px;font-weight:700;letter-spacing:2px;margin-top:auto}
+button.play{border-radius:0;width:100%;min-height:64px;display:flex;justify-content:center;gap:14px;align-items:center;padding:0 22px;font-size:20px;font-weight:700;letter-spacing:2px;margin-top:auto}
 button.play svg{width:28px;height:20px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:square}
 /* quit as a bold X */
 button.quit{width:44px;min-width:44px;padding:0;display:grid;place-items:center;border-color:transparent}
@@ -853,7 +853,7 @@ function intro(){
       ${MOODS.map(([f,a],i)=>`<figure aria-roledescription="slide" aria-label="${i+1} / ${MOODS.length}"><img src="images/intro/${f}-${document.documentElement.dataset.theme==="dark"?"blue":"light"}.webp" alt="${T(a[0],a[1])}" width="720" height="1279" ${i?'loading="lazy"':''} draggable="false"></figure>`).join("")}
     </div>
     <div class="dots" role="group" aria-label="${T("Images","Beelden")}">${MOODS.map((_,i)=>`<button aria-label="${T("Image","Beeld")} ${i+1}" onclick="carTo(${i})"><i></i></button>`).join("")}</div>
-    <button class="solid play" onclick="S.edition='draw';go('home')">Play<svg viewBox="0 0 28 20" aria-hidden="true"><path d="M1 10h24M17 2l8 8-8 8"/></svg></button>
+    <button class="solid play" onclick="S.edition='draw';go('home')">${T("Start the game","Start het spel")}<svg viewBox="0 0 28 20" aria-hidden="true"><path d="M1 10h24M17 2l8 8-8 8"/></svg></button>
     <button class="play second" onclick="S.edition='words';go('home')">${T("Play with words","Speel met woorden")}<svg viewBox="0 0 28 20" aria-hidden="true"><path d="M1 10h24M17 2l8 8-8 8"/></svg></button>
   </div>`;
 }
