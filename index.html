@@ -9,6 +9,7 @@
 <link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="manifest" href="icons/manifest.webmanifest">
+<link rel="preload" href="images/glitch-title.webp" as="image" type="image/webp">
 <meta name="apple-mobile-web-app-title" content="Glitch">
 <meta property="og:image" content="https://oojo-wouter.github.io/exquisite-corpse/icons/icon-512.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -32,6 +33,9 @@
 /* screen 1: title, swipeable mood images, play */
 .intro{min-height:calc(100svh - 98px);display:flex;flex-direction:column;gap:18px}
 .intro h1{font-weight:700;letter-spacing:-.04em;text-transform:uppercase}
+/* hand-drawn title: the image is only a mask, so the ink follows the theme (cobalt on light, light on cobalt) */
+.logo{width:100%;max-width:460px;aspect-ratio:1000/214;margin-left:-1.5%;color:transparent;overflow:hidden;background:var(--ink);
+  -webkit-mask:url(images/glitch-title.webp) left center/contain no-repeat;mask:url(images/glitch-title.webp) left center/contain no-repeat}
 .base{font-family:var(--display);font-weight:300;font-size:23px;line-height:30px;letter-spacing:-.575px;margin-top:4px}
 .car{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;border:1.5px solid var(--ink);background:#0047ab}
 .car::-webkit-scrollbar{display:none}
@@ -791,7 +795,7 @@ const MOODS=[["alien",["Alien, fish and bird","Alien, vis en vogel"]],["kat-robo
 let carTick=0, carIdx=0;
 function intro(){
   return `<div class="intro">
-    <div><h1>Glitch.</h1><p class="base">create the unexpected.</p></div>
+    <div><h1 class="logo" aria-label="Glitch">Glitch.</h1><p class="base">create the unexpected.</p></div>
     <div class="car" id="car" role="region" aria-roledescription="carousel" aria-label="${T("Creatures made by folding paper","Wezens gemaakt door papier te vouwen")}" tabindex="0">
       ${MOODS.map(([f,a],i)=>`<figure aria-roledescription="slide" aria-label="${i+1} / ${MOODS.length}"><img src="images/intro/${f}.webp" alt="${T(a[0],a[1])}" width="720" height="1279" ${i?'loading="lazy"':''} draggable="false"></figure>`).join("")}
     </div>
