@@ -234,6 +234,14 @@ textarea{font-family:var(--display);font-size:30px;line-height:33.75px;font-weig
 .steps b{font-family:var(--display);font-weight:700;font-size:23px;line-height:1;font-variant-numeric:tabular-nums}
 .steps i{font-family:var(--display);font-style:normal;font-weight:300;font-size:17px}
 .steps .end{grid-template-columns:1fr;color:var(--grey);font-size:13px}
+.rules{background:var(--card);border:1px solid var(--line)}
+.rules summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px;font-size:15px;font-weight:600;min-height:48px;box-sizing:border-box}
+.rules summary::-webkit-details-marker{display:none}
+.rules summary::after{content:"";width:9px;height:9px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:translateY(-3px) rotate(45deg);transition:transform .2s;flex:none}
+.rules[open] summary::after{transform:translateY(2px) rotate(-135deg)}
+.rules summary:focus-visible{outline:2px solid currentColor;outline-offset:-4px}
+.rules .steps{border:0;border-top:1.5px dashed var(--line);background:none}
+.steps.big strong{display:block;font-family:var(--display);font-size:23px;font-weight:400;letter-spacing:-.5px;text-transform:uppercase;line-height:1.1;margin-bottom:4px}
 .sharegrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 a.btn{display:flex;align-items:center;justify-content:center;text-decoration:none;box-sizing:border-box;text-align:center;font-size:14px;padding:10px 8px}
 .loader{height:230px;display:flex;justify-content:center;align-items:flex-end;perspective:700px;padding-top:10px}
@@ -997,6 +1005,8 @@ async function loadStats(){
   <p class="muted" style="font-size:12px;line-height:1.4">${T("Counts games played over a link (from the first part) and pieces put on the wall. Games played on one phone that were never published are not stored, so they are not counted.","Telt spellen via een link (vanaf het eerste deel) en stukken op de muur. Spellen op één gsm die nooit gepubliceerd werden, worden niet bewaard en tellen dus niet mee.")}</p>`;
 }
 
+let rulesIsOpen=false;
+function rulesOpen(){ return `<details class="rules"${rulesIsOpen?" open":""} ontoggle="rulesIsOpen=this.open"><summary>${T("What do you do in the game?","Wat moet je doen in het spel?")}</summary>`; }
 function home(){
   const words=S.edition==="words", blocks=!words&&S.tab==="blocks";
   return `
@@ -1009,19 +1019,19 @@ function home(){
     ${words ? `<div class="steps" aria-label="${T("How to play Words","Zo speel je Woorden")}">
       ${[0,1,2].map(i=>`<div><b>${i+1}</b><span><strong>${WORD_PARTS[3][i]}?</strong> <i>${WORD_HELP[3][i][1]}</i></span></div>`).join("")}
       <div class="end">${T("One player per line. You only see the last word before yours. Then read the whole sentence out loud.","Eén speler per regel. Je ziet alleen het laatste woord voor het jouwe. Lees daarna de hele zin hardop voor.")}</div>
-    </div>` : blocks ? `<div class="steps" aria-label="${T("How to play Blocks","Zo speel je Blokken")}">
-      <div><b>1</b><span>${T("<strong>Build a head.</strong> Tap or drag over the grid to paint small blocks, starting at the squares. Tap a block again to turn it. Run a few blocks into the bottom row.","<strong>Bouw een hoofd.</strong> Tik of sleep over het rooster om kleine blokjes te zetten, begin bij de vierkantjes. Tik nog eens om een blokje te draaien. Laat een paar blokken doorlopen tot in de onderste rij.")}</span></div>
-      <div><b>2</b><span>${T("<strong>Build a body.</strong> You only see a faint copy of the bottom row above. Build on from there.","<strong>Bouw een lijf.</strong> Je ziet alleen een vage kopie van de onderste rij erboven. Bouw daar verder.")}</span></div>
-      <div><b>3</b><span>${T("<strong>Build a belly.</strong> Same again.","<strong>Bouw een buik.</strong> Net hetzelfde.")}</span></div>
-      <div><b>4</b><span>${T("<strong>Build legs.</strong> The last fold. Give it something to stand on.","<strong>Bouw benen.</strong> De laatste vouw. Geef het iets om op te staan.")}</span></div>
+    </div>` : blocks ? `${rulesOpen()}<div class="steps big">
+      <div><b>1</b><span>${T("<strong>Build a head</strong>Tap or drag over the grid to paint small blocks, starting at the squares. Tap a block again to turn it. Run a few blocks into the bottom row.","<strong>Bouw een hoofd</strong>Tik of sleep over het rooster om kleine blokjes te zetten, begin bij de vierkantjes. Tik nog eens om een blokje te draaien. Laat een paar blokken doorlopen tot in de onderste rij.")}</span></div>
+      <div><b>2</b><span>${T("<strong>Build a body</strong>You only see a faint copy of the bottom row above. Build on from there.","<strong>Bouw een lijf</strong>Je ziet alleen een vage kopie van de onderste rij erboven. Bouw daar verder.")}</span></div>
+      <div><b>3</b><span>${T("<strong>Build a belly</strong>Same again.","<strong>Bouw een buik</strong>Net hetzelfde.")}</span></div>
+      <div><b>4</b><span>${T("<strong>Build legs</strong>The last fold. Give it something to stand on.","<strong>Bouw benen</strong>De laatste vouw. Geef het iets om op te staan.")}</span></div>
       <div class="end">${T("Then unfold it and watch the creature build itself, block by block.","Vouw dan open en kijk hoe het wezen zichzelf bouwt, blok per blok.")}</div>
-    </div>` : `<div class="steps" aria-label="${T("How to play Drawing","Zo speel je Tekenen")}">
-      <div><b>1</b><span>${T("<strong>Draw a head.</strong> Start from the dots. Let a few lines run down past the dashed line.","<strong>Teken een hoofd.</strong> Begin bij de stippen. Laat een paar lijnen doorlopen tot over de stippellijn.")}</span></div>
-      <div><b>2</b><span>${T("<strong>Draw a body.</strong> You only see dots where the lines above ended. Start from those.","<strong>Teken een lijf.</strong> Je ziet alleen stippen waar de lijnen erboven stopten. Begin daar.")}</span></div>
-      <div><b>3</b><span>${T("<strong>Draw a belly.</strong> Same again.","<strong>Teken een buik.</strong> Net hetzelfde.")}</span></div>
-      <div><b>4</b><span>${T("<strong>Draw legs.</strong> The last fold. Give it something to stand on.","<strong>Teken benen.</strong> De laatste vouw. Geef het iets om op te staan.")}</span></div>
+    </div></details>` : `${rulesOpen()}<div class="steps big">
+      <div><b>1</b><span>${T("<strong>Draw a head</strong>Start from the dots. Let a few lines run down past the dashed line.","<strong>Teken een hoofd</strong>Begin bij de stippen. Laat een paar lijnen doorlopen tot over de stippellijn.")}</span></div>
+      <div><b>2</b><span>${T("<strong>Draw a body</strong>You only see dots where the lines above ended. Start from those.","<strong>Teken een lijf</strong>Je ziet alleen stippen waar de lijnen erboven stopten. Begin daar.")}</span></div>
+      <div><b>3</b><span>${T("<strong>Draw a belly</strong>Same again.","<strong>Teken een buik</strong>Net hetzelfde.")}</span></div>
+      <div><b>4</b><span>${T("<strong>Draw legs</strong>The last fold. Give it something to stand on.","<strong>Teken benen</strong>De laatste vouw. Geef het iets om op te staan.")}</span></div>
       <div class="end">${T("Then unfold it and see the whole creature for the first time.","Vouw dan open en zie het hele wezen voor het eerst.")}</div>
-    </div>`}
+    </div></details>`}
   </div>
   <div class="stack">
     <button class="solid wide" onclick="askRules(startLocal)">${T("Play on this phone · pass it around","Speel op deze gsm · geef hem door")}</button>
