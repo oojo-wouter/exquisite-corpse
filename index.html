@@ -1062,7 +1062,7 @@ function openExamples(){
   const bg=document.createElement("div"); bg.className="magicbg exbg"; bg.id="examples";
   bg.innerHTML=`<div class="magic expop" role="dialog" aria-modal="true" aria-labelledby="ex-h">
     <button class="quit exclose" onclick="closeExamples()" aria-label="${T("Close","Sluiten")}">${X_ICON}</button>
-    <h2 id="ex-h">${T("Examples","Voorbeelden")}</h2>
+    <h2 id="ex-h">${T("Unfolded!","Ontvouwd!")}</h2>
     <div class="car excar" id="excar" role="region" aria-roledescription="carousel" aria-label="${T("Examples","Voorbeelden")}" tabindex="0">
       ${MOODS.map(([f,a],i)=>`<figure aria-roledescription="slide" aria-label="${i+1} / ${MOODS.length}"><img data-mood="${f}" src="${moodSrc(f)}" alt="${T(a[0],a[1])}" width="720" height="1279" draggable="false"></figure>`).join("")}
     </div>
