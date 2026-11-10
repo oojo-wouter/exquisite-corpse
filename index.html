@@ -249,6 +249,13 @@ textarea{font-family:var(--display);font-size:30px;line-height:33.75px;font-weig
 .steps b{font-family:var(--display);font-weight:700;font-size:23px;line-height:1;font-variant-numeric:tabular-nums}
 .steps i{font-family:var(--display);font-style:normal;font-weight:300;font-size:17px}
 .steps .end{grid-template-columns:1fr;color:var(--grey);font-size:13px}
+.exlink{display:inline;justify-self:start;margin-top:4px;min-height:0;padding:0;border:0;background:none;color:var(--ink);font:inherit;font-weight:600;text-transform:none;letter-spacing:0;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+/* examples pop-up takes the images' own background so they sit without a frame */
+.expop{background:#fefefe;padding:18px 0 10px;gap:8px}
+:root[data-theme="dark"] .expop{background:#0144a1}
+.expop h2{padding:0 60px 0 20px}
+.exclose{position:absolute;top:8px;right:8px}
+.excar img{height:min(62svh,560px);object-fit:contain;object-position:center}
 .rules{background:var(--card);border:1px solid var(--line)}
 .rules summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px;font-size:15px;font-weight:600;min-height:48px;box-sizing:border-box}
 .rules summary::-webkit-details-marker{display:none}
@@ -1041,6 +1048,32 @@ after.intro=()=>{
   c.addEventListener("keydown",e=>{ if(e.key==="ArrowRight") carTo(carIdx+1); if(e.key==="ArrowLeft") carTo(carIdx-1); });
 };
 
+// ---------- examples pop-up: the start-screen images, swipeable ----------
+const moodSrc=f=>`images/intro/${f}-${document.documentElement.dataset.theme==="dark"?"blue":"light"}.webp`;
+let exIdx=0, exReturn=null;
+function openExamples(){
+  exReturn=document.activeElement; exIdx=0;
+  const bg=document.createElement("div"); bg.className="magicbg"; bg.id="examples";
+  bg.innerHTML=`<div class="magic expop" role="dialog" aria-modal="true" aria-labelledby="ex-h">
+    <button class="quit exclose" onclick="closeExamples()" aria-label="${T("Close","Sluiten")}">${X_ICON}</button>
+    <h2 id="ex-h">${T("Examples","Voorbeelden")}</h2>
+    <div class="car excar" id="excar" role="region" aria-roledescription="carousel" aria-label="${T("Examples","Voorbeelden")}" tabindex="0">
+      ${MOODS.map(([f,a],i)=>`<figure aria-roledescription="slide" aria-label="${i+1} / ${MOODS.length}"><img data-mood="${f}" src="${moodSrc(f)}" alt="${T(a[0],a[1])}" width="720" height="1279" draggable="false"></figure>`).join("")}
+    </div>
+    <div class="dots exdots" role="group" aria-label="${T("Images","Beelden")}">${MOODS.map((_,i)=>`<button aria-label="${T("Image","Beeld")} ${i+1}" onclick="exTo(${i})"><i></i></button>`).join("")}</div>
+  </div>`;
+  bg.addEventListener("click",e=>{ if(e.target===bg) closeExamples(); });
+  document.body.appendChild(bg); document.body.style.overflow="hidden";
+  const c=$("#excar"); let t;
+  c.addEventListener("scroll",()=>{ clearTimeout(t); t=setTimeout(()=>{ exIdx=Math.round(c.scrollLeft/c.clientWidth); exDots(); },60); },{passive:true});
+  c.addEventListener("keydown",e=>{ if(e.key==="ArrowRight") exTo(exIdx+1); if(e.key==="ArrowLeft") exTo(exIdx-1); });
+  exDots(); c.focus();
+}
+function exTo(i){ const c=$("#excar"); if(!c) return; exIdx=(i+MOODS.length)%MOODS.length; c.scrollTo({left:exIdx*c.clientWidth,behavior:"smooth"}); exDots(); }
+function exDots(){ document.querySelectorAll(".exdots button").forEach((b,i)=>b.setAttribute("aria-current",i===exIdx)); }
+function closeExamples(){ $("#examples")?.remove(); document.body.style.overflow=""; exReturn?.focus?.(); }
+addEventListener("keydown",e=>{ if(e.key==="Escape" && $("#examples")) closeExamples(); });
+
 // ---------- invite to put Glitch on the home screen (once, on the start screen; not when already installed) ----------
 let installEvt=null, installClosed=false;
 addEventListener("beforeinstallprompt",e=>{ e.preventDefault(); installEvt=e; });
@@ -1227,13 +1260,13 @@ function home(){
       <div><b>2</b><span>${T("<strong>Build a body</strong>You only see a faint copy of the bottom row above. Build on from there.","<strong>Bouw een lijf</strong>Je ziet alleen een vage kopie van de onderste rij erboven. Bouw daar verder.")}</span></div>
       <div><b>3</b><span>${T("<strong>Build a belly</strong>Same again.","<strong>Bouw een buik</strong>Net hetzelfde.")}</span></div>
       <div><b>4</b><span>${T("<strong>Build legs</strong>The last fold. Give it something to stand on.","<strong>Bouw benen</strong>De laatste vouw. Geef het iets om op te staan.")}</span></div>
-      <div class="end">${T("Then unfold it and watch the creature build itself, block by block.","Vouw dan open en kijk hoe het wezen zichzelf bouwt, blok per blok.")}</div>
+      <div class="end">${T("Then unfold it and watch the creature build itself, block by block.","Vouw dan open en kijk hoe het wezen zichzelf bouwt, blok per blok.")} <button class="exlink" onclick="openExamples()">${T("Examples","Voorbeelden")}</button></div>
     </div></details>` : `${rulesOpen()}<div class="steps big">
       <div><b>1</b><span>${T("<strong>Draw a head</strong>Start from the dots. Let a few lines run down past the dashed line.","<strong>Teken een hoofd</strong>Begin bij de stippen. Laat een paar lijnen doorlopen tot over de stippellijn.")}</span></div>
       <div><b>2</b><span>${T("<strong>Draw a body</strong>You only see dots where the lines above ended. Start from those.","<strong>Teken een lijf</strong>Je ziet alleen stippen waar de lijnen erboven stopten. Begin daar.")}</span></div>
       <div><b>3</b><span>${T("<strong>Draw a belly</strong>Same again.","<strong>Teken een buik</strong>Net hetzelfde.")}</span></div>
       <div><b>4</b><span>${T("<strong>Draw legs</strong>The last fold. Give it something to stand on.","<strong>Teken benen</strong>De laatste vouw. Geef het iets om op te staan.")}</span></div>
-      <div class="end">${T("Then unfold it and see the whole creature for the first time.","Vouw dan open en zie het hele wezen voor het eerst.")}</div>
+      <div class="end">${T("Then unfold it and see the whole creature for the first time.","Vouw dan open en zie het hele wezen voor het eerst.")} <button class="exlink" onclick="openExamples()">${T("Examples","Voorbeelden")}</button></div>
     </div></details>`}
   </div>
   <div class="gc"><div class="stack">
@@ -1662,7 +1695,8 @@ async function revealShare(btn){
   shareLink(revealMsg(g)+" "+LINK, btn);
 }
 function applyTheme(t){ document.documentElement.dataset.theme=t; const b=$("#mode"); if(b) b.setAttribute("aria-label", t==="dark"?T("Switch to light mode","Naar lichte modus"):T("Switch to dark mode","Naar donkere modus"));
-  document.querySelector('meta[name="theme-color"]')?.setAttribute("content", t==="dark"?"#0047ab":"#f4f6fb"); }
+  document.querySelector('meta[name="theme-color"]')?.setAttribute("content", t==="dark"?"#0047ab":"#f4f6fb");
+  document.querySelectorAll("img[data-mood]").forEach(i=>i.src=moodSrc(i.dataset.mood)); }
 function toggleTheme(){ const t=document.documentElement.dataset.theme==="dark"?"light":"dark"; store.set("ec-theme",t); applyTheme(t);
   if(S.screen==="turn") pad?.redraw(); if(S.screen==="intro") render();
   if(S.screen==="admin") render(); if(S.screen==="reveal") render(); }
