@@ -290,7 +290,7 @@ a.btn{display:flex;align-items:center;justify-content:center;text-decoration:non
 .quip{font-family:var(--display);font-weight:300;letter-spacing:-.575px;font-size:23px;line-height:30px;text-align:center;min-height:2.3em;transition:opacity .3s}
 @media (prefers-reduced-motion: reduce){.lb.b1,.lb.b2,.eye{animation:none}}
 .pens{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
-.pen{width:34px;height:34px;min-height:34px;padding:0;border:1.5px solid transparent;border-radius:50%;display:grid;place-items:center;background:transparent}
+.pen,.pen.tool{width:34px;height:34px;min-height:34px;padding:0;border:1.5px solid transparent;border-radius:50%;display:grid;place-items:center;background:transparent}
 .pen i{display:block;border-radius:50%;background:var(--ink)}
 .pen.sw i{width:18px;height:18px;box-shadow:inset 0 0 0 1px rgba(127,127,127,.35)}
 .pen[aria-pressed="true"]{border-color:var(--ink)}
@@ -364,7 +364,7 @@ button.warn{background:var(--ink);color:var(--paper)}
   .logo{max-width:620px}
   .base{font-size:28px;line-height:36px}
   .intro .car img{--h:clamp(320px, calc(100svh - 520px), 980px)}
-  .toolpick{gap:14px}.tool{padding:20px}
+  .toolpick{gap:14px}.toolpick .tool{padding:20px}
   .steps div{padding:14px 18px;font-size:15px}
   .wall{columns:3}
   .kpis{grid-template-columns:repeat(4,1fr)}
@@ -457,7 +457,7 @@ button.warn{background:var(--ink);color:var(--paper)}
   .logo{max-width:560px}
   .base{font-size:27px;line-height:34px}
   .steps div{padding:14px 18px;font-size:15px}
-  .tool{padding:18px}
+  .toolpick .tool{padding:18px}
   .reveal .wsec{font-size:48px;padding:20px 28px}
 }
 
