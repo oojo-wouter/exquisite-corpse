@@ -971,11 +971,30 @@ function render(){
   document.documentElement.classList.toggle("intro-on", S.screen==="intro");
   const adm=$("#adm"); if(adm){ S.screen==="admin" ? adm.setAttribute("aria-current","page") : adm.removeAttribute("aria-current"); }
   after[S.screen]?.();
+  fitBtns();
 }
 const after = {};
+// a label that would run over two lines gets a smaller letter, step by step, until it fits on one line (or hits the minimum)
+function btnWraps(b){
+  const tops=[], w=document.createTreeWalker(b,NodeFilter.SHOW_TEXT);
+  for(let n; n=w.nextNode();){ if(!n.data.trim()) continue; const rg=document.createRange(); rg.selectNodeContents(n);
+    for(const x of rg.getClientRects()) if(x.width>1) tops.push(x.top); }
+  return tops.length>0 && Math.max(...tops)-Math.min(...tops)>8;
+}
+function fitBtns(){
+  document.querySelectorAll("#app button.wide").forEach(b=>{
+    b.style.fontSize=""; b.style.letterSpacing="";
+    if(!btnWraps(b)) return;
+    let size=parseFloat(getComputedStyle(b).fontSize); const min=b.classList.contains("solid")?14:12;
+    b.style.letterSpacing="1px";
+    while(btnWraps(b) && size>min){ size--; b.style.fontSize=size+"px"; }
+  });
+}
+document.fonts?.ready.then(fitBtns);
 // rotating the phone or tablet, or resizing the window: re-fit the paper, the images and the reveal
 let rsT=0, rsW=innerWidth, rsH=innerHeight;
 addEventListener("resize",()=>{ clearTimeout(rsT); rsT=setTimeout(()=>{
+  fitBtns();
   if(innerWidth===rsW && Math.abs(innerHeight-rsH)<120) return; // ignore the toolbar sliding in and out on phones
   rsW=innerWidth; rsH=innerHeight;
   if(S.screen==="intro") carTo(carIdx,false);
