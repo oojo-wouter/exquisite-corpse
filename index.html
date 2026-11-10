@@ -1133,8 +1133,9 @@ async function loadStats(){
   <p class="muted" style="font-size:12px;line-height:1.4">${T("Counts games played over a link (from the first part) and pieces put on the wall. Games played on one phone that were never published are not stored, so they are not counted.","Telt spellen via een link (vanaf het eerste deel) en stukken op de muur. Spellen op één gsm die nooit gepubliceerd werden, worden niet bewaard en tellen dus niet mee.")}</p>`;
 }
 
-let rulesIsOpen=false;
-function rulesOpen(){ return `<details class="rules"${rulesIsOpen?" open":""} ontoggle="rulesIsOpen=this.open"><summary>${T("What do you do in the game?","Wat moet je doen in het spel?")}</summary>`; }
+// closed on a phone in portrait; open in landscape, where the steps fill the right column
+let rulesIsOpen=null;
+function rulesOpen(){ return `<details class="rules"${(rulesIsOpen??matchMedia("(orientation: landscape) and (min-width: 640px)").matches)?" open":""} ontoggle="rulesIsOpen=this.open"><summary>${T("What do you do in the game?","Wat moet je doen in het spel?")}</summary>`; }
 function home(){
   const words=S.edition==="words", blocks=!words&&S.tab==="blocks";
   return `<div class="ga">
