@@ -1520,7 +1520,7 @@ function handoff(){
   return `<div class="handoff">
     <div class="fold-ill"><i></i><i></i></div>
     <span class="lab">${T("Part","Deel")} ${n} ${T("done","klaar")}</span>
-    <h2>${T("Fold. Pass the phone to the next player.","Vouw. Geef de gsm aan de volgende speler.")}</h2>
+    <h2>${T("Fold. Pass it on to the next player.","Vouw. Geef door aan de volgende speler.")}</h2>
     <p class="muted">${T(`No peeking. The next player does the ${esc(partNames(g)[n].toLowerCase())} from ${foldHint(g)} only.`,`Niet spieken. De volgende speler doet het deel ‘${esc(partNames(g)[n].toLowerCase())}’ en ziet alleen ${foldHint(g)}.`)}</p>
     <button class="solid wide" onclick="go('turn')">${T("I'm the next player","Ik ben de volgende speler")}</button>
   </div>`;
