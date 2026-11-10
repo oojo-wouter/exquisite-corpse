@@ -144,14 +144,17 @@ p{margin:0}
 .stack{display:flex;flex-direction:column;gap:10px}
 hr{border:0;border-top:1px solid var(--line);margin:0;width:100%}
 
-button,.btn{font:inherit;font-weight:400;text-transform:uppercase;letter-spacing:.5px;line-height:16px;border-radius:999px;border:1.5px solid var(--ink);background:transparent;color:var(--ink);
+button,.btn{font:inherit;font-weight:400;text-transform:uppercase;letter-spacing:.5px;line-height:16px;border-radius:0;border:1.5px solid var(--ink);background:transparent;color:var(--ink);
   padding:11px 18px;cursor:pointer;min-height:44px;transition:background .15s,color .15s}
 button.solid{background:var(--ink);color:var(--paper)}
 button:disabled{opacity:.35;cursor:default}
 button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
 button.ghost{border-color:transparent;padding-inline:10px}
 button.wide{width:100%}
-.seg{display:grid;grid-template-columns:1fr 1fr;border:1.5px solid var(--ink);border-radius:14px;overflow:hidden}
+/* main buttons look like the start screen: square, primary (solid) 64px, secondary 52px */
+button.wide{border-radius:0;min-height:52px;font-size:15px;font-weight:700;letter-spacing:1.5px;line-height:1.2;display:flex;justify-content:center;align-items:center;gap:10px;padding:8px 18px;text-align:center}
+button.wide.solid{min-height:64px;font-size:20px;letter-spacing:2px}
+.seg{display:grid;grid-template-columns:1fr 1fr;border:1.5px solid var(--ink);border-radius:0;overflow:hidden}
 .seg button{border:0;border-radius:0;min-height:52px}
 .seg button+button{border-left:1.5px solid var(--ink)}
 .seg button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
@@ -395,6 +398,8 @@ button.warn{background:var(--ink);color:var(--paper)}
   .base{font-size:19px;line-height:24px}
   button.play{min-height:52px;font-size:17px}
   button.play.second{min-height:44px}
+  button.wide.solid{min-height:52px;font-size:17px}
+  button.wide:not(.solid){min-height:44px}
   .handoff{min-height:calc(100svh - 74px);gap:14px}
   .fold-ill{height:70px}.fold-ill i{height:34px}.fold-ill i:last-child{top:36px}
   .loader{height:170px}
@@ -822,13 +827,15 @@ async function dbWall(){
 async function ensureInDB(g){
   if(g.inDB) return; g.id=newId(); await dbCreate(g); await api("turns",{method:"POST",body:JSON.stringify(g.turns.map((t,n)=>turnRow(g,n,t)))}); g.inDB=true;
 }
-async function publishToWall(btn){
-  const g=S.game; btn.disabled=true; btn.textContent=T("Publishing…","Publiceren…");
+// every finished game goes on the wall by itself as soon as it is unfolded
+async function publishToWall(g){
+  if(!hasDB()||g.onWall||g.walling) return; g.walling=true;
   try{
     await ensureInDB(g);
-    try{ await api("wall",{method:"POST",body:JSON.stringify({game_id:g.id})}); }catch(e){ if(e.status!==409) throw e; }
-    g.onWall=true; btn.textContent=T("On the wall","Op de muur"); toast(T("Published to the wall","Op de muur gezet"));
-  }catch(e){ btn.disabled=false; btn.textContent=T("Publish to wall","Op de muur zetten"); toast(T("Could not publish (","Publiceren lukte niet (")+(e.status||T("no connection","geen verbinding"))+"): "+(e.message||e), 9000); }
+    let fresh=true; try{ await api("wall",{method:"POST",body:JSON.stringify({game_id:g.id})}); }catch(e){ if(e.status!==409) throw e; fresh=false; }
+    g.onWall=true; if(fresh) toast(T("Your piece is on the wall","Je werk staat op de muur"));
+  }catch(e){ toast(T("Could not put it on the wall (","Op de muur zetten lukte niet (")+(e.status||T("no connection","geen verbinding"))+")", 6000); }
+  g.walling=false;
 }
 // ---------- AI pen drawing of a finished sentence (server function "pen-drawing" calls Claude) ----------
 const AI_ON = /[?&]ai\b/.test(location.search); // test with ?ai until the Supabase function is set up
@@ -839,15 +846,15 @@ async function makeAI(btn){
     const r=await fetch(SB.url.replace(/\/$/,"")+"/functions/v1/pen-drawing",{method:"POST",headers:{apikey:SB.key,"Content-Type":"application/json"},body:JSON.stringify({game_id:g.id})});
     let j={}; try{ j=await r.json(); }catch(_){}
     if(!r.ok||!j.strokes){ const e=new Error(r.status===404?T("the AI drawing is not switched on yet","de AI-tekening staat nog niet aan"):(j.error||j.message||"error "+r.status)); e.status=r.status; throw e; }
-    g.ai={strokes:dec(j.strokes),title:j.title||"",fresh:true}; render();
+    g.ai={strokes:dec(j.strokes),title:j.title||"",fresh:true}; render(); publishAI(g);
     setTimeout(()=>$("#ai")?.scrollIntoView({behavior:"smooth",block:"center"}),100);
   }catch(e){ btn.disabled=false; btn.classList.remove("busy"); btn.innerHTML=AI_BADGE+T("Make a pen drawing of this sentence","Maak een pentekening van deze zin"); toast(T("No drawing (","Geen tekening (")+(e.status||T("no connection","geen verbinding"))+"): "+(e.message||e), 9000); }
 }
-async function publishAI(btn){
-  const g=S.game; btn.disabled=true; btn.textContent=T("Publishing…","Publiceren…");
+async function publishAI(g){
+  if(g.aiOnWall) return;
   try{ try{ await api("ai_wall",{method:"POST",body:JSON.stringify({game_id:g.id})}); }catch(e){ if(e.status!==409) throw e; }
-    g.aiOnWall=true; btn.textContent=T("Drawing is on the wall","Tekening staat op de muur"); toast(T("AI drawing published to the wall","AI-tekening op de muur gezet"));
-  }catch(e){ btn.disabled=false; btn.textContent=T("Publish drawing to wall","Tekening op de muur zetten"); toast(T("Could not publish (","Publiceren lukte niet (")+(e.status||T("no connection","geen verbinding"))+"): "+(e.message||e), 9000); }
+    g.aiOnWall=true; toast(T("The AI drawing is on the wall","De AI-tekening staat op de muur"));
+  }catch(e){ toast(T("Could not put the drawing on the wall (","Tekening op de muur zetten lukte niet (")+(e.status||T("no connection","geen verbinding"))+")", 6000); }
 }
 const AI_BADGE_ = () => `<span class="aibadge" title="${T("Made by AI from the players' sentence","Gemaakt door AI op basis van de zin van de spelers")}"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5l1.6 4.9 4.9 1.6-4.9 1.6L8 14.5l-1.6-4.9L1.5 8l4.9-1.6z"/></svg>AI</span>`;
 const AI_BADGE_P = {}; Object.defineProperty(window,"AI_BADGE",{get:AI_BADGE_});
@@ -855,8 +862,7 @@ function aiBlock(g, ex){
   if(!hasDB()) return "";
   if(g.ai) return `<div class="aibox" id="ai"><div class="aihead">${AI_BADGE}<span>${T("Pen drawing by AI","Pentekening door AI")}${g.ai.title?" · "+esc(g.ai.title):""}</span></div>
     <canvas id="aican" aria-label="${T("AI pen drawing of the sentence","AI-pentekening van de zin")}"></canvas>
-    <p class="muted aicap">${T("Drawn by AI from the sentence above. The players wrote the words, not the lines.","Getekend door AI op basis van de zin hierboven. De spelers schreven de woorden, niet de lijnen.")}</p>
-    ${ex?"":`<button class="wide" ${g.aiOnWall?"disabled":""} onclick="publishAI(this)">${g.aiOnWall?T("Drawing is on the wall","Tekening staat op de muur"):T("Publish drawing to wall","Tekening op de muur zetten")}</button>`}</div>`;
+    <p class="muted aicap">${T("Drawn by AI from the sentence above. The players wrote the words, not the lines.","Getekend door AI op basis van de zin hierboven. De spelers schreven de woorden, niet de lijnen.")}</p></div>`;
   if(ex||!AI_ON) return "";
   return `<button class="wide aibtn" onclick="makeAI(this)">${AI_BADGE}${T("Make a pen drawing of this sentence","Maak een pentekening van deze zin")}</button>`;
 }
@@ -873,7 +879,7 @@ function wallHtml(){
   return `<div class="stack" id="wall-top"><span class="lab">${T("The wall","De muur")}</span><h2>${T("Made with this app","Gemaakt met deze app")}</h2>
   <p class="muted" style="font-size:13px">${T("Finished pieces that players chose to publish. Tap one to unfold it.","Afgewerkte stukken die spelers publiceerden. Tik erop om ze open te vouwen.")}</p></div>
   <div class="wall" id="wall"></div>
-  <p class="muted" id="wall-empty" ${hasDB()?"hidden":""}>${T("Nothing on the wall yet. Finish a game and tap <b>Publish to wall</b> to be the first.","Nog niets op de muur. Speel een spel uit en tik op <b>Op de muur zetten</b> om de eerste te zijn.")}</p>`;
+  <p class="muted" id="wall-empty" ${hasDB()?"hidden":""}>${T("Nothing on the wall yet. Finish a game: every reveal lands here by itself.","Nog niets op de muur. Speel een spel uit: elke onthulling komt hier vanzelf.")}</p>`;
 }
 async function loadWall(){
   if(!hasDB()) return;
@@ -990,7 +996,7 @@ function intro(){
     </div>
     <div class="dots" role="group" aria-label="${T("Images","Beelden")}">${MOODS.map((_,i)=>`<button aria-label="${T("Image","Beeld")} ${i+1}" onclick="carTo(${i})"><i></i></button>`).join("")}</div>
     <button class="solid play" onclick="S.edition='draw';go('home')">${T("Start the game","Start het spel")}<svg viewBox="0 0 28 20" aria-hidden="true"><path d="M1 10h24M17 2l8 8-8 8"/></svg></button>
-    <button class="play second" onclick="S.edition='words';go('home')">${T("Play with words","Speel met woorden")}<svg viewBox="0 0 28 20" aria-hidden="true"><path d="M1 10h24M17 2l8 8-8 8"/></svg></button>
+    <button class="play second" onclick="S.edition='words';go('home')">${T("Play with words","Speel met woorden")}</button>
   </div>`;
 }
 function carTo(i, smooth=true){ const c=$("#car"); if(!c) return; carIdx=(i+MOODS.length)%MOODS.length; c.scrollTo({left:carIdx*c.clientWidth,behavior:smooth?"smooth":"auto"}); carDots(); }
@@ -1494,8 +1500,7 @@ function reveal(){
   <div class="credits">${who.map((w,i)=>`<span>${esc(partNames(g)[i])} · ${esc(w)}${g.turns[i].rule&&ruleById(g.turns[i].rule)?` · ${ruleIcon(g.turns[i].rule,13)} `+esc(ruleT(ruleById(g.turns[i].rule))[0]):""}</span>`).join("")}</div>
   ${g.edition==="words"?aiBlock(g, ex):""}
   <div class="stack">
-    ${hasDB()&&!ex?`<button class="solid wide" ${g.onWall?"disabled":""} onclick="publishToWall(this)">${g.onWall?T("On the wall","Op de muur"):T("Publish to wall","Op de muur zetten")}</button>`:""}
-    <button class="${hasDB()&&!ex?"":"solid "}wide" onclick="saveImage(this)">${T("Save image","Bewaar afbeelding")}</button>
+    <button class="solid wide" onclick="saveImage(this)">${T("Save or send image","Bewaar of stuur afbeelding door")}</button>
     ${g.edition==="words"?`<button class="wide" onclick="copy(wordsText(S.game),this)">${T("Copy the sentence","Kopieer de zin")}</button>`:""}
     ${S.mode==="remote"||ex?`<div class="stack"><span class="lab">${ex?T("Share it","Deel het"):T("Send the reveal to everyone","Stuur de onthulling naar iedereen")}</span>
       ${navigator.share?`<button class="wide" onclick="revealShare(this)">${T("Share…","Delen…")}</button>`:""}
@@ -1505,6 +1510,7 @@ function reveal(){
 }
 after.reveal=()=>{
   const g=S.game;
+  if(S.mode!=="wall") publishToWall(g);
   const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
   const canv=[...document.querySelectorAll("#rv canvas")];
   const draw=(c,t)=>paintPart(c.getContext("2d"), g, +c.dataset.i, t);
