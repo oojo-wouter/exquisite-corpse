@@ -43,7 +43,7 @@
 :root.intro-on{--paper:#fefefe}
 :root.intro-on[data-theme="dark"]{--paper:#0144a1}
 .car figure{flex:0 0 100%;margin:0;scroll-snap-align:center;scroll-snap-stop:always}
-.car img{display:block;width:100%;height:clamp(260px, calc(100svh - 360px), 640px);object-fit:cover;object-position:50% 62%;user-select:none;-webkit-user-drag:none}
+.car img{display:block;width:100%;height:clamp(240px, calc(100svh - 420px), 620px);object-fit:cover;object-position:50% 62%;user-select:none;-webkit-user-drag:none}
 .dots{display:flex;justify-content:center;gap:2px;margin-top:-8px}
 .dots button{min-height:32px;width:32px;padding:0;border:0;display:grid;place-items:center}
 .dots button i{width:8px;height:8px;border-radius:50%;border:1.5px solid var(--ink);box-sizing:border-box}
@@ -95,6 +95,18 @@ button.back{padding-left:0}
 .mbtns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px}
 .mbtns button{border-radius:0;min-height:52px;font-weight:700;letter-spacing:1px}
 @media (prefers-reduced-motion: reduce){.magicbg,.magic,.wand,.spark i,.mrules div{animation:none}.spark{display:none}}
+button.play.second{min-height:52px;font-size:15px;letter-spacing:1.5px;margin-top:-8px;background:transparent;color:var(--ink)}
+.toolpick{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tool{border-radius:0;border:1.5px solid var(--line);background:var(--card);display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding:14px;text-transform:none;letter-spacing:0;text-align:left;line-height:1.3;min-height:0}
+.tool svg{width:40px;height:40px;fill:none;stroke:currentColor;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.tool[aria-checked="true"]{border-color:var(--ink);background:var(--ink);color:var(--paper)}
+.tool .tn{font-family:var(--display);font-size:23px;font-weight:400;letter-spacing:-.5px}
+.tool .lvl{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:500;letter-spacing:.5px;text-transform:uppercase}
+.tool .bars{display:flex;gap:2px;align-items:flex-end}
+.tool .bars i{width:4px;border:1px solid currentColor;box-sizing:border-box}
+.tool .bars i:nth-child(1){height:6px}.tool .bars i:nth-child(2){height:9px}.tool .bars i:nth-child(3){height:12px}
+.tool .bars i.on{background:currentColor}
+.tool small{font-size:12px;opacity:.75}
 html,body{height:100%}
 body{background:var(--paper);color:var(--ink);font-family:var(--ui);font-size:15px;line-height:25px;font-weight:400;
   padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));
@@ -441,11 +453,6 @@ function armTap(key,ask,fn){
 let S = { rulesOn: store.get("ec-rules")!=="0", screen:"intro", atab:"wall", back:"intro", edition:"draw", theme:"Dream zoo", parts:3, mode:"local", game:null,
   tab: (()=>{ const q=new URLSearchParams(location.search).get("tab"); if(q==="blocks"||q==="rules") return q; return store.get("ec-tab")==="blocks"?"blocks":"rules"; })() };
 function setTab(t){ S.tab=t; store.set("ec-tab",t); const q=new URLSearchParams(location.search); q.set("tab",t); history.replaceState(null,"",location.pathname+"?"+q+location.hash); render(); }
-function tabsHtml(){
-  return `<div class="tabs" role="tablist" aria-label="${T("Test versions","Testversies")}">
-    <button role="tab" aria-selected="${S.tab!=="blocks"}" onclick="setTab('rules')"><small>Test A</small>${T("Pen + rules","Pen + regels")}</button>
-    <button role="tab" aria-selected="${S.tab==="blocks"}" onclick="setTab('blocks')"><small>Test B</small>${T("Blocks","Blokken")}</button></div>`;
-}
 
 function persist(){ if(S.mode!=="local") return; store.set("ec-game", S.game && S.game.turns.length<S.game.parts ? JSON.stringify({g:S.game,d:S.draft,screen:S.screen}) : ""); }
 function savedGame(){ try{ return JSON.parse(store.get("ec-game")||"null"); }catch(e){ return null; } }
@@ -455,7 +462,7 @@ function resumeBtn(){ const sv=savedGame(); if(!sv) return "";
 function resume(){ const sv=savedGame(); if(!sv) return; S.mode="local"; S.game=sv.g; S.draft=sv.d; go(sv.screen==="turn"?"turn":"handoff"); }
 function quitGame(){ if(S.mode==="local") store.set("ec-game",""); S.game=null; S.draft=null; location.hash=""; go("home"); }
 function newGame(){
-  const blocks=S.tab==="blocks", edition=blocks?"draw":S.edition;
+  const blocks=S.edition!=="words"&&S.tab==="blocks", edition=blocks?"draw":S.edition;
   return { id: Math.random().toString(36).slice(2,8), edition, theme:S.theme, parts:edition==="draw"?4:3, tech:blocks?"blocks":"pen", rules:!blocks&&!!S.rulesOn,
     start: blocks ? seedCells() : edition==="draw" ? starterDots() : [], turns:[] };
 }
@@ -825,7 +832,8 @@ function intro(){
       ${MOODS.map(([f,a],i)=>`<figure aria-roledescription="slide" aria-label="${i+1} / ${MOODS.length}"><img src="images/intro/${f}-${document.documentElement.dataset.theme==="dark"?"blue":"light"}.webp" alt="${T(a[0],a[1])}" width="720" height="1279" ${i?'loading="lazy"':''} draggable="false"></figure>`).join("")}
     </div>
     <div class="dots" role="group" aria-label="${T("Images","Beelden")}">${MOODS.map((_,i)=>`<button aria-label="${T("Image","Beeld")} ${i+1}" onclick="carTo(${i})"><i></i></button>`).join("")}</div>
-    <button class="solid play" onclick="go('home')">Play<svg viewBox="0 0 28 20" aria-hidden="true"><path d="M1 10h24M17 2l8 8-8 8"/></svg></button>
+    <button class="solid play" onclick="S.edition='draw';go('home')">Play<svg viewBox="0 0 28 20" aria-hidden="true"><path d="M1 10h24M17 2l8 8-8 8"/></svg></button>
+    <button class="play second" onclick="S.edition='words';go('home')">${T("Play with words","Speel met woorden")}<svg viewBox="0 0 28 20" aria-hidden="true"><path d="M1 10h24M17 2l8 8-8 8"/></svg></button>
   </div>`;
 }
 function carTo(i, smooth=true){ const c=$("#car"); if(!c) return; carIdx=(i+MOODS.length)%MOODS.length; c.scrollTo({left:carIdx*c.clientWidth,behavior:smooth?"smooth":"auto"}); carDots(); }
@@ -921,37 +929,31 @@ async function loadStats(){
 }
 
 function home(){
+  const words=S.edition==="words", blocks=!words&&S.tab==="blocks";
   return `
   <button class="ghost chip back" style="align-self:flex-start" onclick="go('intro')">← Glitch</button>
-  <div class="stack" style="gap:6px"><span class="lab">${T("Step 2 · choose","Stap 2 · kies")}</span><h2>${T("What will you make?","Wat ga je maken?")}</h2></div>
-  <p class="muted" style="font-size:14px;line-height:1.45">${T("Each player adds one part of a figure or a sentence without seeing the rest. Only the fold gives a hint. The whole thing is revealed at the end.","Elke speler voegt een deel van een figuur of een zin toe zonder de rest te zien. Alleen de vouw geeft een hint. Op het einde wordt alles onthuld.")}</p>
-
-  ${tabsHtml()}
+  <div class="stack" style="gap:6px"><span class="lab">${words?T("Words · step 2","Woorden · stap 2"):T("Drawing · step 2","Tekenen · stap 2")}</span><h2>${words?T("Make a sentence together","Maak samen een zin"):T("How do you want to draw?","Hoe wil je tekenen?")}</h2></div>
+  <p class="muted" style="font-size:14px;line-height:1.45">${words?T("Each player writes one part of a sentence without seeing the rest. Only the last word gives a hint. The whole sentence is revealed at the end.","Elke speler schrijft een deel van een zin zonder de rest te zien. Alleen het laatste woord geeft een hint. Op het einde wordt de hele zin onthuld."):T("Each player draws one part of a creature without seeing the rest. Only the fold gives a hint. The whole thing is revealed at the end.","Elke speler tekent een deel van een wezen zonder de rest te zien. Alleen de vouw geeft een hint. Op het einde wordt alles onthuld.")}</p>
+  ${words?"":toolPick()}
   ${resumeBtn()}
-  ${S.tab==="blocks" ? `<div class="stack"><span class="lab">${T("Blocks · build it like a game","Blokken · bouw het als een game")}</span>
-    <div class="steps" aria-label="${T("How to play Blocks","Zo speel je Blokken")}">
+  <div class="stack">
+    ${words ? `<div class="steps" aria-label="${T("How to play Words","Zo speel je Woorden")}">
+      ${[0,1,2].map(i=>`<div><b>${i+1}</b><span><strong>${WORD_PARTS[3][i]}?</strong> <i>${WORD_HELP[3][i][1]}</i></span></div>`).join("")}
+      <div class="end">${T("One player per line. You only see the last word before yours. Then read the whole sentence out loud.","Eén speler per regel. Je ziet alleen het laatste woord voor het jouwe. Lees daarna de hele zin hardop voor.")}</div>
+    </div>` : blocks ? `<div class="steps" aria-label="${T("How to play Blocks","Zo speel je Blokken")}">
       <div><b>1</b><span>${T("<strong>Build a head.</strong> Tap or drag over the grid to paint small blocks, starting at the squares. Tap a block again to turn it. Run a few blocks into the bottom row.","<strong>Bouw een hoofd.</strong> Tik of sleep over het rooster om kleine blokjes te zetten, begin bij de vierkantjes. Tik nog eens om een blokje te draaien. Laat een paar blokken doorlopen tot in de onderste rij.")}</span></div>
       <div><b>2</b><span>${T("<strong>Build a body.</strong> You only see a faint copy of the bottom row above. Build on from there.","<strong>Bouw een lijf.</strong> Je ziet alleen een vage kopie van de onderste rij erboven. Bouw daar verder.")}</span></div>
       <div><b>3</b><span>${T("<strong>Build a belly.</strong> Same again.","<strong>Bouw een buik.</strong> Net hetzelfde.")}</span></div>
       <div><b>4</b><span>${T("<strong>Build legs.</strong> The last fold. Give it something to stand on.","<strong>Bouw benen.</strong> De laatste vouw. Geef het iets om op te staan.")}</span></div>
       <div class="end">${T("Then unfold it and watch the creature build itself, block by block.","Vouw dan open en kijk hoe het wezen zichzelf bouwt, blok per blok.")}</div>
-    </div></div>` : `<div class="stack"><span class="lab">${T("Edition","Editie")}</span>
-    <div class="seg">
-      <button aria-pressed="${S.edition==="draw"}" onclick="S.edition='draw';render()">${T("Drawing","Tekenen")}</button>
-      <button aria-pressed="${S.edition==="words"}" onclick="S.edition='words';render()">${T("Words","Woorden")}</button>
-    </div>
-    ${S.edition==="draw" ? `<div class="steps" aria-label="${T("How to play Drawing","Zo speel je Tekenen")}">
+    </div>` : `<div class="steps" aria-label="${T("How to play Drawing","Zo speel je Tekenen")}">
       <div><b>1</b><span>${T("<strong>Draw a head.</strong> Start from the dots. Let a few lines run down past the dashed line.","<strong>Teken een hoofd.</strong> Begin bij de stippen. Laat een paar lijnen doorlopen tot over de stippellijn.")}</span></div>
       <div><b>2</b><span>${T("<strong>Draw a body.</strong> You only see dots where the lines above ended. Start from those.","<strong>Teken een lijf.</strong> Je ziet alleen stippen waar de lijnen erboven stopten. Begin daar.")}</span></div>
       <div><b>3</b><span>${T("<strong>Draw a belly.</strong> Same again.","<strong>Teken een buik.</strong> Net hetzelfde.")}</span></div>
       <div><b>4</b><span>${T("<strong>Draw legs.</strong> The last fold. Give it something to stand on.","<strong>Teken benen.</strong> De laatste vouw. Geef het iets om op te staan.")}</span></div>
       <div class="end">${T("Then unfold it and see the whole creature for the first time.","Vouw dan open en zie het hele wezen voor het eerst.")}</div>
-    </div>` : `<div class="steps" aria-label="${T("How to play Words","Zo speel je Woorden")}">
-      ${[0,1,2].map(i=>`<div><b>${i+1}</b><span><strong>${WORD_PARTS[3][i]}?</strong> <i>${WORD_HELP[3][i][1]}</i></span></div>`).join("")}
-      <div class="end">${T("One player per line. You only see the last word before yours. Then read the whole sentence out loud.","Eén speler per regel. Je ziet alleen het laatste woord voor het jouwe. Lees daarna de hele zin hardop voor.")}</div>
     </div>`}
-  </div>`}
-
+  </div>
   <div class="stack">
     <button class="solid wide" onclick="askRules(startLocal)">${T("Play on this phone · pass it around","Speel op deze gsm · geef hem door")}</button>
     <button class="wide" onclick="askRules(startRemote)">${T("Play over a link · one part each","Speel via een link · ieder een deel")}</button>
@@ -960,11 +962,21 @@ function home(){
   <div class="stack" id="yours" hidden></div>
 `;
 }
-
+// drawing tool: pen (easy) or blocks (advanced), each with a difficulty meter
+const PEN_ICON='<svg viewBox="0 0 40 40" aria-hidden="true"><path d="M8 32l3-9L27 7a3.5 3.5 0 0 1 5 5L16 28z"/><path d="M24 10l5 5M11 23l5 5"/><path d="M6 35c6-2 10 1 16-1"/></svg>';
+const BLOCK_ICON='<svg viewBox="0 0 40 40" aria-hidden="true"><rect x="7" y="7" width="11" height="11"/><rect x="18" y="7" width="11" height="11"/><rect x="18" y="18" width="11" height="11"/><path d="M7 33h11V22z"/><rect x="29" y="22" width="6" height="11"/></svg>';
+function toolPick(){
+  const opt=(id,icon,name,lvl,lvlName,desc)=>`<button class="tool" role="radio" aria-checked="${(S.tab==="blocks")===(id==="blocks")}" onclick="setTab('${id}')">
+    ${icon}<span class="tn">${name}</span><span class="lvl" aria-label="${T("Difficulty","Moeilijkheid")}: ${lvlName}"><span class="bars">${[1,2,3].map(i=>`<i class="${i<=lvl?"on":""}"></i>`).join("")}</span>${lvlName}</span><small>${desc}</small></button>`;
+  return `<div class="toolpick" role="radiogroup" aria-label="${T("Draw with","Teken met")}">
+    ${opt("rules",PEN_ICON,T("Pen","Pen"),1,T("Easy","Makkelijk"),T("Just draw, freehand.","Gewoon tekenen, uit de vrije hand."))}
+    ${opt("blocks",BLOCK_ICON,T("Blocks","Blokjes"),3,T("Advanced","Gevorderd"),T("Build it from little blocks on a grid.","Bouw het met blokjes op een rooster."))}
+  </div>`;
+}
 // ---------- magic pop-up: play with a surprise rule, yes or no ----------
 let magicNext=null, magicReturn=null;
 function askRules(next){
-  if(S.tab==="blocks") return next();
+  if(S.edition!=="words"&&S.tab==="blocks") return next();
   magicNext=next; magicReturn=document.activeElement;
   const rs=S.edition==="draw"?RULES_D:RULES_W;
   const bg=document.createElement("div"); bg.className="magicbg"; bg.id="magic";
